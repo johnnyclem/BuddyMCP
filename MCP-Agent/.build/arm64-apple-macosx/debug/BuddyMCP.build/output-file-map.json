@@ -1,0 +1,124 @@
+{
+  "": {
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/master.swiftdeps"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/ApprovalManager.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ApprovalManager.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ApprovalManager.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ApprovalManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ApprovalManager.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ApprovalManager.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/CalendarManager.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/CalendarManager.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/CalendarManager.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/CalendarManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/CalendarManager.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/CalendarManager.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/CryptoManager.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/CryptoManager.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/CryptoManager.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/CryptoManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/CryptoManager.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/CryptoManager.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/EscalationManager.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/EscalationManager.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/EscalationManager.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/EscalationManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/EscalationManager.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/EscalationManager.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/HTTPGateway.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/HTTPGateway.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/HTTPGateway.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/HTTPGateway~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/HTTPGateway.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/HTTPGateway.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/KeychainManager.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/KeychainManager.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/KeychainManager.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/KeychainManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/KeychainManager.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/KeychainManager.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/LLMManager.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/LLMManager.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/LLMManager.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/LLMManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/LLMManager.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/LLMManager.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/MCPManager.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/MCPManager.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/MCPManager.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/MCPManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/MCPManager.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/MCPManager.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/TaskModels.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/TaskModels.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/TaskModels.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/TaskModels~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/TaskModels.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/TaskModels.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/WatchdogService.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/WatchdogService.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/WatchdogService.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/WatchdogService~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/WatchdogService.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/WatchdogService.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/WebFetchManager.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/WebFetchManager.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/WebFetchManager.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/WebFetchManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/WebFetchManager.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/WebFetchManager.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/App/ChatView.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ChatView.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ChatView.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ChatView~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ChatView.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ChatView.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/App/ContentView.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ContentView.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ContentView.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ContentView~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ContentView.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/ContentView.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/App/MCP_AgentApp.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/MCP_AgentApp.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/MCP_AgentApp.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/MCP_AgentApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/MCP_AgentApp.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/MCP_AgentApp.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/App/OverlayWindowController.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/OverlayWindowController.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/OverlayWindowController.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/OverlayWindowController~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/OverlayWindowController.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/OverlayWindowController.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/App/SettingsView.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/SettingsView.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/SettingsView.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/SettingsView~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/SettingsView.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/SettingsView.dia"
+  },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/App/TimelineView.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/TimelineView.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/TimelineView.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/TimelineView~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/TimelineView.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/TimelineView.dia"
+  }
+}
