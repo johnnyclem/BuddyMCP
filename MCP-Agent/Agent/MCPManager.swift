@@ -209,6 +209,72 @@ class MCPServer: ObservableObject, Identifiable {
                 category: "crypto",
                 requiresConfirmation: false,
                 estimatedDuration: 1.0
+            ),
+            // Todo Tools
+            MCPTool(
+                name: "todo_add_task",
+                description: "Add a new task to the todo list",
+                inputSchema: [
+                    "title": .init(type: "string", description: "Task title", required: true, defaultValue: nil),
+                    "description": .init(type: "string", description: "Task description", required: false, defaultValue: nil),
+                    "assignee": .init(type: "string", description: "Assignee (user/agent)", required: false, defaultValue: "user")
+                ],
+                category: "todo",
+                requiresConfirmation: false,
+                estimatedDuration: 0.5
+            ),
+            MCPTool(
+                name: "todo_complete_task",
+                description: "Mark a task as completed",
+                inputSchema: [
+                    "title": .init(type: "string", description: "Title of the task to complete (fuzzy match)", required: true, defaultValue: nil)
+                ],
+                category: "todo",
+                requiresConfirmation: false,
+                estimatedDuration: 0.5
+            ),
+            MCPTool(
+                name: "todo_list_tasks",
+                description: "List all pending tasks",
+                inputSchema: nil,
+                category: "todo",
+                requiresConfirmation: false,
+                estimatedDuration: 0.5
+            ),
+            // Memory Tools
+            MCPTool(
+                name: "memory_create_entity",
+                description: "Create a memory entity (node)",
+                inputSchema: [
+                    "name": .init(type: "string", description: "Entity name", required: true, defaultValue: nil),
+                    "type": .init(type: "string", description: "Entity type (e.g., Person, Location, Fact)", required: true, defaultValue: nil),
+                    "info": .init(type: "string", description: "Additional info/properties", required: false, defaultValue: nil)
+                ],
+                category: "memory",
+                requiresConfirmation: false,
+                estimatedDuration: 0.5
+            ),
+            MCPTool(
+                name: "memory_create_relation",
+                description: "Create a relationship between two entities",
+                inputSchema: [
+                    "from": .init(type: "string", description: "Source entity name", required: true, defaultValue: nil),
+                    "to": .init(type: "string", description: "Target entity name", required: true, defaultValue: nil),
+                    "relation": .init(type: "string", description: "Relationship type (e.g., likes, knows, located_at)", required: true, defaultValue: nil)
+                ],
+                category: "memory",
+                requiresConfirmation: false,
+                estimatedDuration: 0.5
+            ),
+            MCPTool(
+                name: "memory_search",
+                description: "Search memory graph",
+                inputSchema: [
+                    "query": .init(type: "string", description: "Search query", required: true, defaultValue: nil)
+                ],
+                category: "memory",
+                requiresConfirmation: false,
+                estimatedDuration: 0.5
             )
         ]
     }
@@ -263,6 +329,53 @@ class MCPServer: ObservableObject, Identifiable {
             return try await CryptoManager.shared.getPrice(
                 symbol: arguments["symbol"] as? String ?? ""
             )
+            
+        // Todo Handlers
+        case "todo_add_task":
+            let title = arguments["title"] as? String ?? ""
+            let desc = arguments["description"] as? String ?? ""
+            let assigneeStr = arguments["assignee"] as? String ?? "user"
+            let assignee: TaskAssignee = assigneeStr.lowercased() == "agent" ? .agent : .user
+            
+            TaskManager.shared.addTask(title: title, description: desc, assignee: assignee)
+            return ["success": true, "message": "Task added: \(title)"]
+            
+        case "todo_complete_task":
+            let titleQuery = arguments["title"] as? String ?? ""
+            // Simple fuzzy match
+            if let task = TaskManager.shared.tasks.first(where: { $0.title.localizedCaseInsensitiveContains(titleQuery) && $0.status != .completed }) {
+                TaskManager.shared.updateTaskStatus(id: task.id, status: .completed)
+                return ["success": true, "message": "Marked '\(task.title)' as completed"]
+            } else {
+                return ["success": false, "message": "Task not found: \(titleQuery)"]
+            }
+            
+        case "todo_list_tasks":
+            let tasks = TaskManager.shared.tasks.filter { $0.status != .completed }.map { ["title": $0.title, "assignee": $0.assignee.rawValue] }
+            return ["tasks": tasks]
+            
+        // Memory Handlers
+        case "memory_create_entity":
+            let name = arguments["name"] as? String ?? ""
+            let type = arguments["type"] as? String ?? "Fact"
+            let info = arguments["info"] as? String ?? ""
+            let node = GraphMemoryManager.shared.addNode(name: name, type: type, properties: ["info": info])
+            return ["success": true, "node_id": node.id.uuidString]
+            
+        case "memory_create_relation":
+            let from = arguments["from"] as? String ?? ""
+            let to = arguments["to"] as? String ?? ""
+            let rel = arguments["relation"] as? String ?? ""
+            if let edge = GraphMemoryManager.shared.addEdge(from: from, to: to, relation: rel) {
+                return ["success": true, "edge_id": edge.id.uuidString]
+            } else {
+                return ["success": false, "message": "Could not find entities"]
+            }
+            
+        case "memory_search":
+            let query = arguments["query"] as? String ?? ""
+            return GraphMemoryManager.shared.search(query: query)
+            
         default:
             throw MCPError.unknownTool(name)
         }

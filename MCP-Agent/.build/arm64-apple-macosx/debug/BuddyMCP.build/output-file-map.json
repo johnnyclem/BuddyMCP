@@ -30,6 +30,13 @@
     "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/EscalationManager.swiftdeps",
     "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/EscalationManager.dia"
   },
+  "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/GraphMemoryManager.swift": {
+    "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/GraphMemoryManager.d",
+    "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/GraphMemoryManager.swift.o",
+    "swiftmodule": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/GraphMemoryManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/GraphMemoryManager.swiftdeps",
+    "diagnostics": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/GraphMemoryManager.dia"
+  },
   "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/HTTPGateway.swift": {
     "dependencies": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/HTTPGateway.d",
     "object": "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/HTTPGateway.swift.o",

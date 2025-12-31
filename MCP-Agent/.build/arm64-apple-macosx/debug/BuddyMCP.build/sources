@@ -2,6 +2,7 @@
 /Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/CalendarManager.swift
 /Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/CryptoManager.swift
 /Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/EscalationManager.swift
+/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/GraphMemoryManager.swift
 /Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/HTTPGateway.swift
 /Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/KeychainManager.swift
 /Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/LLMManager.swift

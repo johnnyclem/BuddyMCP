@@ -40,6 +40,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/GraphMemoryManager.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/HTTPGateway.swift"
         },
         {
@@ -107,6 +111,7 @@
         "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/CalendarManager.swift.o",
         "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/CryptoManager.swift.o",
         "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/EscalationManager.swift.o",
+        "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/GraphMemoryManager.swift.o",
         "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/HTTPGateway.swift.o",
         "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/KeychainManager.swift.o",
         "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/LLMManager.swift.o",
@@ -197,6 +202,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/GraphMemoryManager.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/HTTPGateway.swift.o"
         },
         {
@@ -258,6 +267,7 @@
         "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/CalendarManager.swift",
         "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/CryptoManager.swift",
         "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/EscalationManager.swift",
+        "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/GraphMemoryManager.swift",
         "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/HTTPGateway.swift",
         "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/KeychainManager.swift",
         "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/LLMManager.swift",
@@ -291,6 +301,7 @@
       "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/CalendarManager.swift",
       "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/CryptoManager.swift",
       "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/EscalationManager.swift",
+      "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/GraphMemoryManager.swift",
       "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/HTTPGateway.swift",
       "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/KeychainManager.swift",
       "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/LLMManager.swift",
@@ -420,6 +431,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/GraphMemoryManager.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/Agent/HTTPGateway.swift"
         },
         {
@@ -503,6 +518,10 @@
         {
           "kind" : "file",
           "name" : "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/EscalationManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/johnnyclem/Desktop/Repos/BuddyMCP/MCP-Agent/.build/arm64-apple-macosx/debug/BuddyMCP.build/GraphMemoryManager.swift.o"
         },
         {
           "kind" : "file",
