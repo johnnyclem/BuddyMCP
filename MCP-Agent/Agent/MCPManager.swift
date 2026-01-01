@@ -4,7 +4,7 @@ import OSLog
 
 // MARK: - MCP Tool Definition
 struct MCPTool: Codable, Identifiable {
-    let id = UUID()
+    var id = UUID()
     let name: String
     let description: String?
     let inputSchema: [String: MCPParam]?
@@ -12,6 +12,10 @@ struct MCPTool: Codable, Identifiable {
     let requiresConfirmation: Bool
     let estimatedDuration: TimeInterval?
     var isEnabled: Bool = true
+    
+    enum CodingKeys: String, CodingKey {
+        case name, description, inputSchema, category, requiresConfirmation, estimatedDuration, isEnabled
+    }
     
     struct MCPParam: Codable {
         let type: String
@@ -275,6 +279,29 @@ class MCPServer: ObservableObject, Identifiable {
                 category: "memory",
                 requiresConfirmation: false,
                 estimatedDuration: 0.5
+            ),
+            // Messages Tools
+            MCPTool(
+                name: "messages_send",
+                description: "Send an iMessage or SMS",
+                inputSchema: [
+                    "to": .init(type: "string", description: "Recipient name (fuzzy match)", required: true, defaultValue: nil),
+                    "message": .init(type: "string", description: "Message content", required: true, defaultValue: nil)
+                ],
+                category: "messages",
+                requiresConfirmation: true,
+                estimatedDuration: 2.0
+            ),
+            MCPTool(
+                name: "messages_read",
+                description: "Read recent messages from a person",
+                inputSchema: [
+                    "from": .init(type: "string", description: "Sender name (fuzzy match)", required: true, defaultValue: nil),
+                    "limit": .init(type: "string", description: "Number of messages (default 5)", required: false, defaultValue: "5")
+                ],
+                category: "messages",
+                requiresConfirmation: false,
+                estimatedDuration: 2.0
             )
         ]
     }
@@ -375,6 +402,18 @@ class MCPServer: ObservableObject, Identifiable {
         case "memory_search":
             let query = arguments["query"] as? String ?? ""
             return GraphMemoryManager.shared.search(query: query)
+            
+        // Messages Handlers
+        case "messages_send":
+            let to = arguments["to"] as? String ?? ""
+            let message = arguments["message"] as? String ?? ""
+            return try await MessagesManager.shared.sendMessage(to: to, message: message)
+            
+        case "messages_read":
+            let from = arguments["from"] as? String ?? ""
+            let limitStr = arguments["limit"] as? String ?? "5"
+            let limit = Int(limitStr) ?? 5
+            return try await MessagesManager.shared.readMessages(from: from, limit: limit)
             
         default:
             throw MCPError.unknownTool(name)

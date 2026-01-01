@@ -172,7 +172,12 @@ class WatchdogService: ObservableObject {
                 continuation.resume(returning: status == 0)
             }
             
-            task.launch()
+            do {
+                try task.run()
+            } catch {
+                // If we can't run pgrep, assume not running or error state
+                continuation.resume(returning: false)
+            }
         }
         
         if !isRunning {
@@ -199,14 +204,10 @@ class WatchdogService: ObservableObject {
     }
     
     private func checkMemoryUsage() async -> Bool {
+        let pid = ProcessInfo.processInfo.processIdentifier
         let task = Process()
-        task.launchPath = "/usr/bin/python3"
-        task.arguments = ["-c", """
-        import psutil, os
-        process = psutil.Process(os.getpid())
-        memory_mb = process.memory_info().rss / 1024 / 1024
-        print(f'{memory_mb:.1f}')
-        """]
+        task.launchPath = "/bin/ps"
+        task.arguments = ["-o", "rss=", "-p", String(pid)]
         
         let outputPipe = Pipe()
         task.standardOutput = outputPipe
@@ -216,7 +217,8 @@ class WatchdogService: ObservableObject {
                 let status = process.terminationStatus
                 if status == 0 {
                     let output = String(data: outputPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if let memoryStr = output, let memoryMB = Double(memoryStr) {
+                    if let memoryStr = output, let memoryKB = Double(memoryStr) {
+                        let memoryMB = memoryKB / 1024.0
                         // Warn if using more than 8GB
                         let shouldWarn = memoryMB > 8192
                         continuation.resume(returning: shouldWarn)
@@ -225,7 +227,11 @@ class WatchdogService: ObservableObject {
                 }
                 continuation.resume(returning: false)
             }
-            task.launch()
+            do {
+                try task.run()
+            } catch {
+                continuation.resume(returning: false)
+            }
         }
     }
     
@@ -249,7 +255,11 @@ class WatchdogService: ObservableObject {
                 }
                 continuation.resume(returning: false)
             }
-            task.launch()
+            do {
+                try task.run()
+            } catch {
+                continuation.resume(returning: false)
+            }
         }
     }
     
@@ -282,7 +292,11 @@ class WatchdogService: ObservableObject {
                 continuation.resume(returning: success)
             }
             
-            task.launch()
+            do {
+                try task.run()
+            } catch {
+                continuation.resume(returning: false)
+            }
         }
         
         if restartSuccess {
@@ -311,7 +325,11 @@ class WatchdogService: ObservableObject {
                 continuation.resume(returning: process.terminationStatus == 0)
             }
             
-            task.launch()
+            do {
+                try task.run()
+            } catch {
+                continuation.resume(returning: false)
+            }
         }
     }
     
@@ -320,7 +338,7 @@ class WatchdogService: ObservableObject {
         logger.critical("Agent failed to restart, escalating to user")
         
         do {
-            try await MCPManager.shared.callTool("escalate_to_user", arguments: [
+            _ = try await MCPManager.shared.callTool("escalate_to_user", arguments: [
                 "reason": "Agent watchdog failure",
                 "message": "The MCP Agent has failed and the watchdog was unable to restart it automatically. Please check the system logs and restart the application manually."
             ])
@@ -342,7 +360,11 @@ class WatchdogService: ObservableObject {
                 continuation.resume(returning: process.terminationStatus == 0)
             }
             
-            task.launch()
+            do {
+                try task.run()
+            } catch {
+                continuation.resume(returning: false)
+            }
         }
         
         if killSuccess {
@@ -356,7 +378,11 @@ class WatchdogService: ObservableObject {
                     continuation.resume(returning: process.terminationStatus == 0)
                 }
                 
-                task.launch()
+                do {
+                    try task.run()
+                } catch {
+                    continuation.resume(returning: false)
+                }
             }
             
             if !startSuccess {

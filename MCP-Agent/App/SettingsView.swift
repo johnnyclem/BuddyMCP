@@ -8,42 +8,81 @@ struct SettingsView: View {
     @State private var newServerCommand = "" // For Stdio
     @State private var newServerURL = "" // For SSE
     @State private var newServerTypeString = "stdio" // "stdio" or "sse"
+    @State private var selectedTab = 0
     
     var body: some View {
         VStack(spacing: 0) {
-            TabView {
-                ServerListView(
-                    showingAddServerSheet: $showingAddServerSheet,
-                    newServerName: $newServerName,
-                    newServerCommand: $newServerCommand,
-                    newServerURL: $newServerURL,
-                    newServerTypeString: $newServerTypeString
-                )
-                .tabItem {
-                    Label("Servers", systemImage: "server.rack")
-                }
-                
-                ToolListView()
-                    .tabItem {
-                        Label("Tools", systemImage: "hammer")
-                    }
+            // Custom Tab Bar
+            HStack(spacing: 0) {
+                TabButton(title: "SERVERS", icon: "server.rack", isSelected: selectedTab == 0) { selectedTab = 0 }
+                Rectangle().frame(width: 1).foregroundColor(Theme.inkBlack)
+                TabButton(title: "TOOLS", icon: "hammer", isSelected: selectedTab == 1) { selectedTab = 1 }
+                Rectangle().frame(width: 1).foregroundColor(Theme.inkBlack)
+                TabButton(title: "THEME", icon: "paintbrush", isSelected: selectedTab == 2) { selectedTab = 2 }
+                Rectangle().frame(width: 1).foregroundColor(Theme.inkBlack)
+                Spacer()
             }
-            .frame(width: 700, height: 500)
-            .padding()
+            .frame(height: 44)
+            .background(Theme.background)
+            .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack), alignment: .bottom)
             
-            Divider()
+            // Content
+            Group {
+                if selectedTab == 0 {
+                    ServerListView(
+                        showingAddServerSheet: $showingAddServerSheet,
+                        newServerName: $newServerName,
+                        newServerCommand: $newServerCommand,
+                        newServerURL: $newServerURL,
+                        newServerTypeString: $newServerTypeString
+                    )
+                } else if selectedTab == 1 {
+                    ToolListView()
+                } else {
+                    ThemeSettingsView()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Theme.background)
+            
+            Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack)
             
             HStack {
                 Spacer()
-                Button("Done") {
+                Button("DONE") {
                     dismiss()
                 }
+                .newsprintButton(isPrimary: true)
                 .keyboardShortcut(.defaultAction)
-                .controlSize(.large)
             }
             .padding()
-            .background(Color(nsColor: .windowBackgroundColor))
+            .background(Theme.background)
         }
+        .frame(width: 700, height: 500)
+        .background(Theme.background)
+    }
+}
+
+struct TabButton: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: icon)
+                Text(title)
+                    .font(Theme.uiFont(size: 12, weight: .bold))
+                    .tracking(1)
+            }
+            .padding(.horizontal, 24)
+            .frame(maxHeight: .infinity)
+            .background(isSelected ? Theme.inkBlack : Theme.background)
+            .foregroundColor(isSelected ? Theme.background : Theme.inkBlack)
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -57,66 +96,68 @@ struct ServerListView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            List {
-                ForEach(mcpManager.servers) { server in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(server.name)
-                                .font(.headline)
+            ScrollView {
+                VStack(spacing: 16) {
+                    ForEach(mcpManager.servers) { server in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(server.name)
+                                    .font(Theme.headlineFont(size: 16))
+                                
+                                HStack {
+                                    Image(systemName: serverIcon(for: server.type))
+                                        .font(.caption)
+                                    Text(serverDescription(for: server.type).uppercased())
+                                        .font(Theme.monoFont(size: 10))
+                                        .foregroundColor(Theme.inkBlack.opacity(0.6))
+                                }
+                            }
                             
-                            HStack {
-                                Image(systemName: serverIcon(for: server.type))
+                            Spacer()
+                            
+                            Toggle("", isOn: Binding(
+                                get: { server.isEnabled },
+                                set: { _ in mcpManager.toggleServer(server) }
+                            ))
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            
+                            if case .internal = server.type {
+                                Image(systemName: "lock.fill")
+                                    .foregroundColor(Theme.inkBlack.opacity(0.4))
                                     .font(.caption)
-                                Text(serverDescription(for: server.type))
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        
-                        Spacer()
-                        
-                        Toggle("Enabled", isOn: Binding(
-                            get: { server.isEnabled },
-                            set: { _ in mcpManager.toggleServer(server) }
-                        ))
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                        
-                        if case .internal = server.type {
-                            // Can't delete internal server
-                            Image(systemName: "lock.fill")
-                                .foregroundColor(.gray)
-                                .font(.caption)
+                                    .frame(width: 20)
+                            } else {
+                                Button(action: {
+                                    mcpManager.removeServer(server)
+                                }) {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(Theme.editorialRed)
+                                }
+                                .buttonStyle(.plain)
                                 .frame(width: 20)
-                        } else {
-                            Button(action: {
-                                mcpManager.removeServer(server)
-                            }) {
-                                Image(systemName: "trash")
-                                    .foregroundColor(.red)
                             }
-                            .buttonStyle(.plain)
-                            .frame(width: 20)
                         }
+                        .padding(16)
+                        .newsprintCard()
                     }
-                    .padding(.vertical, 8)
                 }
+                .padding()
             }
-            .listStyle(.inset)
             
-            Divider()
+            Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack)
             
             HStack {
                 Spacer()
                 Button(action: {
                     showingAddServerSheet = true
                 }) {
-                    Label("Add Server", systemImage: "plus")
+                    Label("ADD SERVER", systemImage: "plus")
                 }
-                .controlSize(.regular)
+                .newsprintButton(isPrimary: false)
                 .padding()
             }
-            .background(Color(nsColor: .windowBackgroundColor))
+            .background(Theme.background)
         }
         .sheet(isPresented: $showingAddServerSheet) {
             AddServerView(
@@ -154,24 +195,30 @@ struct AddServerView: View {
     @Binding var typeString: String
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Add MCP Server")
-                .font(.title2)
-                .bold()
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("ADD SERVER")
+                    .font(Theme.headlineFont(size: 18))
+                Spacer()
+            }
+            .padding()
+            .background(Theme.background)
+            .border(width: 1, edges: [.bottom], color: Theme.inkBlack)
             
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 20) {
                 // Name Field
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Name")
-                        .font(.headline)
+                    Text("NAME")
+                        .font(Theme.uiFont(size: 10, weight: .bold))
                     TextField("My Server", text: $name)
-                        .textFieldStyle(.roundedBorder)
+                        .newsprintInput()
                 }
                 
                 // Type Picker
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Server Type")
-                        .font(.headline)
+                    Text("SERVER TYPE")
+                        .font(Theme.uiFont(size: 10, weight: .bold))
                     Picker("", selection: $typeString) {
                         Text("Command (Stdio)").tag("stdio")
                         Text("Remote / Local Server (SSE)").tag("sse")
@@ -179,49 +226,56 @@ struct AddServerView: View {
                     .pickerStyle(.segmented)
                 }
                 
-                Divider().padding(.vertical, 8)
+                Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack.opacity(0.2))
                 
                 // Dynamic Fields
                 if typeString == "stdio" {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Command Line")
-                            .font(.headline)
+                        Text("COMMAND LINE")
+                            .font(Theme.uiFont(size: 10, weight: .bold))
                         TextField("e.g., npx -y @modelcontextprotocol/memory", text: $command)
-                            .textFieldStyle(.roundedBorder)
-                        Text("Enter the full command to execute. The agent will manage the process.")
-                            .font(.caption)
-                            .foregroundColor(.gray)
+                            .newsprintInput()
+                        Text("Enter the full command to execute.")
+                            .font(Theme.bodyFont(size: 12))
+                            .italic()
+                            .foregroundColor(Theme.inkBlack.opacity(0.6))
+                            .padding(.top, 4)
                     }
                 } else {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Server URL")
-                            .font(.headline)
+                        Text("SERVER URL")
+                            .font(Theme.uiFont(size: 10, weight: .bold))
                         TextField("e.g., http://localhost:8000/sse", text: $url)
-                            .textFieldStyle(.roundedBorder)
+                            .newsprintInput()
                     }
                 }
             }
+            .padding(24)
+            .background(Theme.background)
             
             Spacer()
             
             HStack {
-                Button("Cancel") {
+                Button("CANCEL") {
                     isPresented = false
                 }
+                .newsprintButton(isPrimary: false)
                 .keyboardShortcut(.cancelAction)
                 
                 Spacer()
                 
-                Button("Add Server") {
+                Button("ADD SERVER") {
                     addServer()
                 }
-                .buttonStyle(.borderedProminent)
+                .newsprintButton(isPrimary: true)
                 .disabled(isAddDisabled)
-                // Note: removed keyboardShortcut(.defaultAction) here to avoid conflict with the Done button in parent
             }
+            .padding()
+            .background(Theme.background)
+            .border(width: 1, edges: [.top], color: Theme.inkBlack)
         }
-        .padding(24)
-        .frame(width: 500, height: 350)
+        .frame(width: 500, height: 400)
+        .background(Theme.background)
     }
     
     var isAddDisabled: Bool {
@@ -263,42 +317,96 @@ struct ToolListView: View {
     @ObservedObject var mcpManager = MCPManager.shared
     
     var body: some View {
-        List {
-            ForEach(mcpManager.servers) { server in
-                Section(header: Text(server.name)) {
-                    ForEach(server.tools) { tool in
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(tool.name)
-                                    .font(.system(.body, design: .monospaced))
-                                if let desc = tool.description {
-                                    Text(desc)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                        .lineLimit(2)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                ForEach(mcpManager.servers) { server in
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(server.name.uppercased())
+                            .font(Theme.uiFont(size: 12, weight: .bold))
+                            .tracking(2)
+                            .padding(.bottom, 4)
+                            .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack), alignment: .bottom)
+                        
+                        if server.tools.isEmpty {
+                            Text("No tools found")
+                                .font(Theme.bodyFont(size: 14))
+                                .italic()
+                                .foregroundColor(Theme.inkBlack.opacity(0.6))
+                        } else {
+                            ForEach(server.tools) { tool in
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(tool.name)
+                                            .font(Theme.monoFont(size: 13))
+                                        if let desc = tool.description {
+                                            Text(desc)
+                                                .font(Theme.bodyFont(size: 13))
+                                                .foregroundColor(Theme.inkBlack.opacity(0.7))
+                                                .lineLimit(2)
+                                        }
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Toggle("", isOn: Binding(
+                                        get: { tool.isEnabled },
+                                        set: { _ in mcpManager.toggleTool(tool, in: server) }
+                                    ))
+                                    .toggleStyle(.switch)
+                                    .labelsHidden()
                                 }
+                                .padding(12)
+                                .newsprintCard()
                             }
-                            
-                            Spacer()
-                            
-                            Toggle("", isOn: Binding(
-                                get: { tool.isEnabled },
-                                set: { _ in mcpManager.toggleTool(tool, in: server) }
-                            ))
-                            .toggleStyle(.switch)
-                            .labelsHidden()
                         }
-                        .padding(.vertical, 4)
-                    }
-                    if server.tools.isEmpty {
-                        Text("No tools found")
-                            .font(.caption)
-                            .italic()
-                            .foregroundColor(.secondary)
                     }
                 }
             }
+            .padding()
         }
-        .listStyle(.inset)
+        .background(Theme.background)
+    }
+}
+
+struct ThemeSettingsView: View {
+    @ObservedObject var themeManager = ThemeManager.shared
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            Text("SELECT THEME")
+                .font(Theme.uiFont(size: 12, weight: .bold))
+                .tracking(2)
+                .padding(.bottom, 8)
+                .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack), alignment: .bottom)
+            
+            ForEach(ThemeType.allCases) { theme in
+                Button(action: {
+                    themeManager.currentTheme = theme
+                }) {
+                    HStack {
+                        Text(theme.displayName.uppercased())
+                            .font(Theme.headlineFont(size: 16))
+                            .foregroundColor(Theme.inkBlack)
+                        Spacer()
+                        if themeManager.currentTheme == theme {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(Theme.inkBlack)
+                        }
+                    }
+                    .padding()
+                    .newsprintCard()
+                    .overlay(
+                        Rectangle()
+                            .stroke(Theme.inkBlack, lineWidth: themeManager.currentTheme == theme ? 4 : 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            
+            Spacer()
+        }
+        .padding()
+        .background(Theme.background)
     }
 }

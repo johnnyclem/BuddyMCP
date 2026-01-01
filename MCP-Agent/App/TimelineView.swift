@@ -3,6 +3,7 @@ import SwiftUI
 struct TimelineView: View {
     @ObservedObject var taskManager = TaskManager.shared
     @ObservedObject var approvalManager = ApprovalManager.shared
+    @ObservedObject var themeManager = ThemeManager.shared
     @State private var showingAddTask = false
     
     var body: some View {
@@ -11,48 +12,55 @@ struct TimelineView: View {
             VStack(spacing: 0) {
                 // Header
                 HStack {
-                    Text("Up Next")
-                        .font(.title2)
-                        .bold()
+                    Text("UP NEXT")
+                        .font(Theme.headlineFont(size: 20))
+                        .tracking(1)
                     Spacer()
                     Button(action: { showingAddTask = true }) {
-                        Label("New Task", systemImage: "plus")
+                        Label("NEW TASK", systemImage: "plus")
+                            .font(Theme.uiFont(size: 12, weight: .bold))
                     }
+                    .buttonStyle(.plain)
+                    .padding(8)
+                    .border(Theme.inkBlack, width: 1)
                 }
                 .padding()
-                .background(Color(nsColor: .controlBackgroundColor))
-                
-                Divider()
+                .background(Theme.background)
+                .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack), alignment: .bottom)
                 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 24) {
                         if !approvalManager.pendingRequests.isEmpty {
                             ApprovalSection(requests: approvalManager.pendingRequests)
                         }
                         
-                        TaskSection(title: "Agent Working On", tasks: taskManager.tasks.filter { $0.assignee == .agent && $0.status == .inProgress })
+                        TaskSection(title: "Working On", tasks: taskManager.tasks.filter { $0.assignee == .agent && $0.status == .inProgress })
                         
-                        TaskSection(title: "User To-Do", tasks: taskManager.tasks.filter { $0.assignee == .user && $0.status != .completed })
+                        TaskSection(title: "Your To-Do", tasks: taskManager.tasks.filter { $0.assignee == .user && $0.status != .completed })
                         
-                        TaskSection(title: "Upcoming (Agent)", tasks: taskManager.tasks.filter { $0.assignee == .agent && $0.status == .pending })
+                        TaskSection(title: "Upcoming", tasks: taskManager.tasks.filter { $0.assignee == .agent && $0.status == .pending })
                         
                         if taskManager.tasks.isEmpty {
                             Text("No tasks scheduled.")
-                                .foregroundColor(.secondary)
+                                .font(Theme.bodyFont(size: 16))
+                                .italic()
+                                .foregroundColor(Theme.inkBlack.opacity(0.6))
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .padding(.top, 40)
                         }
                     }
                     .padding()
                 }
+                .background(Theme.background)
             }
             .frame(minWidth: 400)
+            .background(Theme.background)
             
-            Divider()
+            Rectangle().frame(width: 1).foregroundColor(Theme.inkBlack)
             
             // Sidebar / Chat Placeholder
             ChatView()
-                .frame(width: 300)
+                .frame(width: 350)
         }
         .sheet(isPresented: $showingAddTask) {
             AddTaskView(isPresented: $showingAddTask)
@@ -65,37 +73,45 @@ struct ApprovalSection: View {
     @ObservedObject var approvalManager = ApprovalManager.shared
     
     var body: some View {
-        VStack(alignment: .leading) {
-            Label("Approvals Required", systemImage: "exclamationmark.triangle.fill")
-                .font(.headline)
-                .foregroundColor(.orange)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Rectangle()
+                    .fill(Theme.editorialRed)
+                    .frame(width: 4, height: 16)
+                Text("APPROVALS REQUIRED")
+                    .font(Theme.uiFont(size: 12, weight: .bold))
+                    .tracking(2)
+                    .foregroundColor(Theme.editorialRed)
+            }
             
             ForEach(requests) { request in
                 HStack {
-                    VStack(alignment: .leading) {
-                        Text(request.toolName).font(.headline)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(request.toolName)
+                            .font(Theme.headlineFont(size: 16))
                         Text(request.arguments.description)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .font(Theme.monoFont(size: 12))
+                            .foregroundColor(Theme.inkBlack.opacity(0.7))
                             .lineLimit(2)
                     }
                     
                     Spacer()
                     
-                    HStack {
-                        Button("Deny") {
+                    HStack(spacing: 8) {
+                        Button("DENY") {
                             approvalManager.denyRequest(request)
                         }
-                        Button("Approve") {
+                        .newsprintButton(isPrimary: false)
+                        
+                        Button("APPROVE") {
                             approvalManager.approveRequest(request)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .newsprintButton(isPrimary: true)
                     }
                 }
                 .padding()
-                .background(Color(nsColor: .controlBackgroundColor))
-                .cornerRadius(8)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.orange.opacity(0.3), lineWidth: 1))
+                .background(Theme.background)
+                .overlay(Rectangle().stroke(Theme.editorialRed, lineWidth: 1))
             }
         }
         .padding(.bottom)
@@ -108,10 +124,13 @@ struct TaskSection: View {
     
     var body: some View {
         if !tasks.isEmpty {
-            VStack(alignment: .leading) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundColor(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
+                Text(title.uppercased())
+                    .font(Theme.uiFont(size: 12, weight: .bold))
+                    .tracking(2)
+                    .foregroundColor(Theme.inkBlack.opacity(0.6))
+                    .padding(.bottom, 4)
+                    .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack.opacity(0.3)), alignment: .bottom)
                 
                 ForEach(tasks) { task in
                     TaskRow(task: task)
@@ -128,15 +147,16 @@ struct TaskRow: View {
     var body: some View {
         HStack {
             Image(systemName: iconForStatus(task.status))
-                .foregroundColor(colorForStatus(task.status))
+                .foregroundColor(Theme.inkBlack)
             
             VStack(alignment: .leading) {
                 Text(task.title)
+                    .font(Theme.bodyFont(size: 16))
                     .strikethrough(task.status == .completed)
                 if !task.description.isEmpty {
                     Text(task.description)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(Theme.bodyFont(size: 14))
+                        .foregroundColor(Theme.inkBlack.opacity(0.7))
                 }
             }
             
@@ -146,14 +166,14 @@ struct TaskRow: View {
                 Button(action: {
                     toggleStatus()
                 }) {
-                    Image(systemName: task.status == .completed ? "checkmark.circle.fill" : "circle")
+                    Image(systemName: task.status == .completed ? "checkmark.square.fill" : "square")
+                        .foregroundColor(Theme.inkBlack)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(8)
-        .background(Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(6)
+        .padding(12)
+        .newsprintCard()
     }
     
     func toggleStatus() {
@@ -170,15 +190,6 @@ struct TaskRow: View {
         case .skipped: return "arrowshape.turn.up.right.circle"
         }
     }
-    
-    func colorForStatus(_ status: TaskStatus) -> Color {
-        switch status {
-        case .inProgress: return .blue
-        case .completed: return .green
-        case .failed: return .red
-        default: return .primary
-    }
-    }
 }
 
 struct AddTaskView: View {
@@ -188,30 +199,63 @@ struct AddTaskView: View {
     @State private var assignee: TaskAssignee = .user
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Add Task").font(.headline)
-            
-            Form {
-                TextField("Title", text: $title)
-                TextField("Description", text: $description)
-                Picker("Assignee", selection: $assignee) {
-                    Text("User").tag(TaskAssignee.user)
-                    Text("Agent").tag(TaskAssignee.agent)
-                }
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("ADD TASK")
+                    .font(Theme.headlineFont(size: 18))
+                Spacer()
             }
             .padding()
+            .background(Theme.background)
+            .border(width: 1, edges: [.bottom], color: Theme.inkBlack)
+            
+            VStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("TITLE")
+                        .font(Theme.uiFont(size: 10, weight: .bold))
+                    TextField("", text: $title)
+                        .newsprintInput()
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("DESCRIPTION")
+                        .font(Theme.uiFont(size: 10, weight: .bold))
+                    TextField("", text: $description)
+                        .newsprintInput()
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("ASSIGNEE")
+                        .font(Theme.uiFont(size: 10, weight: .bold))
+                    Picker("", selection: $assignee) {
+                        Text("User").tag(TaskAssignee.user)
+                        Text("Agent").tag(TaskAssignee.agent)
+                    }
+                    .pickerStyle(.segmented)
+                }
+            }
+            .padding(24)
+            .background(Theme.background)
+            
+            Spacer()
             
             HStack {
-                Button("Cancel") { isPresented = false }
-                Button("Add") {
+                Button("CANCEL") { isPresented = false }
+                    .newsprintButton(isPrimary: false)
+                Spacer()
+                Button("ADD TASK") {
                     TaskManager.shared.addTask(title: title, description: description, assignee: assignee)
                     isPresented = false
                 }
-                .buttonStyle(.borderedProminent)
+                .newsprintButton(isPrimary: true)
                 .disabled(title.isEmpty)
             }
+            .padding()
+            .background(Theme.background)
+            .border(width: 1, edges: [.top], color: Theme.inkBlack)
         }
-        .frame(width: 300, height: 200)
-        .padding()
+        .frame(width: 400, height: 350)
+        .background(Theme.background)
     }
 }

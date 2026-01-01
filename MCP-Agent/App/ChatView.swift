@@ -6,6 +6,7 @@ struct ChatView: View {
         ChatMessage(role: "agent", content: "Hello! I'm your BuddyMCP agent. How can I help you today?")
     ]
     @ObservedObject var llmManager = LLMManager.shared
+    @ObservedObject var themeManager = ThemeManager.shared
     
     struct ChatMessage: Identifiable {
         let id = UUID()
@@ -17,35 +18,43 @@ struct ChatView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("Chat")
-                    .font(.headline)
+                Text("LIVE CHAT")
+                    .font(Theme.headlineFont(size: 16))
+                    .tracking(1)
                 Spacer()
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
-            
-            Divider()
+            .background(Theme.background)
+            .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack), alignment: .bottom)
             
             // Message List
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 16) {
                         ForEach(messages) { msg in
-                            HStack {
+                            HStack(alignment: .top) {
                                 if msg.role == "user" {
                                     Spacer()
                                     Text(msg.content)
-                                        .padding(10)
-                                        .background(Color.blue)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(12)
+                                        .font(Theme.bodyFont(size: 15))
+                                        .padding(12)
+                                        .background(Theme.inkBlack)
+                                        .foregroundColor(Theme.background)
                                         .textSelection(.enabled)
                                 } else {
-                                    Text(msg.content)
-                                        .padding(10)
-                                        .background(Color(nsColor: .controlBackgroundColor))
-                                        .cornerRadius(12)
-                                        .textSelection(.enabled)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("AGENT")
+                                            .font(Theme.monoFont(size: 10))
+                                            .foregroundColor(Theme.inkBlack.opacity(0.6))
+                                        
+                                        Text(msg.content)
+                                            .font(Theme.bodyFont(size: 15))
+                                            .padding(12)
+                                            .background(Theme.background)
+                                            .overlay(Rectangle().stroke(Theme.inkBlack, lineWidth: 1))
+                                            .foregroundColor(Theme.inkBlack)
+                                            .textSelection(.enabled)
+                                    }
                                     Spacer()
                                 }
                             }
@@ -54,6 +63,7 @@ struct ChatView: View {
                     }
                     .padding()
                 }
+                .background(Theme.background)
                 .onChange(of: messages.count) { _ in
                     if let lastId = messages.last?.id {
                         proxy.scrollTo(lastId, anchor: .bottom)
@@ -66,7 +76,7 @@ struct ChatView: View {
                 }
             }
             
-            Divider()
+            Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack)
             
             // Status Bar
             if !llmManager.statusMessage.isEmpty {
@@ -74,31 +84,40 @@ struct ChatView: View {
                     ProgressView()
                         .scaleEffect(0.5)
                         .frame(width: 16, height: 16)
-                    Text(llmManager.statusMessage)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Text(llmManager.statusMessage.uppercased())
+                        .font(Theme.monoFont(size: 10))
+                        .foregroundColor(Theme.inkBlack)
                     Spacer()
                 }
                 .padding(.horizontal)
                 .padding(.top, 8)
+                .background(Theme.background)
             }
             
             // Input Area
-            HStack {
-                TextField("Type a message...", text: $messageText)
-                    .textFieldStyle(.roundedBorder)
+            HStack(spacing: 0) {
+                TextField("TYPE A MESSAGE...", text: $messageText)
+                    .textFieldStyle(.plain)
+                    .font(Theme.monoFont(size: 14))
+                    .padding(12)
+                    .background(Theme.background)
                     .onSubmit {
                         sendMessage()
                     }
                 
                 Button(action: sendMessage) {
-                    Image(systemName: "paperplane.fill")
+                    Image(systemName: "arrow.right")
+                        .foregroundColor(Theme.inkBlack)
+                        .padding(12)
                 }
+                .buttonStyle(.plain)
                 .disabled(messageText.isEmpty || llmManager.isProcessing)
+                .border(width: 1, edges: [.leading], color: Theme.inkBlack)
             }
-            .padding()
-            .background(Color(nsColor: .windowBackgroundColor))
+            .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack), alignment: .top)
+            .background(Theme.background)
         }
+        .background(Theme.background)
     }
     
     func sendMessage() {
@@ -120,7 +139,7 @@ struct ChatView: View {
         Use the available tools to help the user. If you need approval, ask for it.
         """
         
-        var messageHistory: [[String: String]] = [
+        var messageHistory: [[String: Any]] = [
             ["role": "system", "content": systemPrompt]
         ]
         

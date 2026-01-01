@@ -108,6 +108,7 @@ struct StreamingChunk: Codable {
     }
     
     struct ToolCall: Codable {
+        let index: Int?
         let id: String
         let type: String
         let function: Function
@@ -151,7 +152,7 @@ class LLMManager: ObservableObject {
         fallbackChain = configs
     }
     
-    func generateResponse(messages: [[String: String]], tools: [MCPTool]? = nil, stream: Bool = true) async throws -> AsyncThrowingStream<String, Error> {
+    func generateResponse(messages: [[String: Any]], tools: [MCPTool]? = nil, stream: Bool = true) async throws -> AsyncThrowingStream<String, Error> {
         isProcessing = true
         lastError = nil
         statusMessage = "Thinking..."
@@ -200,29 +201,21 @@ class LLMManager: ObservableObject {
         }
     }
     
-    private func generateStreamingResponse(config: LLMConfig, messages: [[String: String]], tools: [MCPTool]?, chunkHandler: @escaping (String) -> Void) async throws {
+    private func generateStreamingResponse(config: LLMConfig, messages: [[String: Any]], tools: [MCPTool]?, chunkHandler: @escaping (String) -> Void) async throws {
         let request = try buildRequest(config: config, messages: messages, tools: tools, stream: true)
         
-        let (_, response) = try await session.data(for: request)
+        let (bytes, response) = try await session.bytes(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw LLMError.invalidResponse
         }
         
         guard httpResponse.statusCode == 200 else {
-            let errorBody = try? JSONSerialization.jsonObject(with: try await collectResponseData(response: httpResponse)) as? [String: Any]
-            var errorMessage: String?
-            if let errorStr = errorBody?["error"] as? String {
-                errorMessage = errorStr
-            } else if let errorDict = errorBody?["error"] as? [String: Any], let msg = errorDict["message"] as? String {
-                errorMessage = msg
-            } else {
-                errorMessage = errorBody?["message"] as? String
-            }
-            throw LLMError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
+            // Try to read error body if possible (bytes stream doesn't allow easy reading of body without consuming)
+             throw LLMError.httpError(statusCode: httpResponse.statusCode, message: "Stream failed")
         }
         
-        // Handle streaming response
-        let (bytes, _) = try await session.bytes(for: request)
+        var accumulatedContent = ""
+        var accumulatedToolCalls: [Int: (id: String, name: String, args: String)] = [:]
         
         for try await line in bytes.lines {
             guard line.hasPrefix("data: ") else { continue }
@@ -236,24 +229,105 @@ class LLMManager: ObservableObject {
             
             do {
                 let chunk = try JSONDecoder().decode(StreamingChunk.self, from: data)
+                
                 if let content = chunk.choices.first?.delta.content {
+                    accumulatedContent += content
                     chunkHandler(content)
                 }
                 
-                // Handle tool calls
-                if let toolCall = chunk.choices.first?.delta.toolCalls?.first {
-                    statusMessage = "Calling tool: \(toolCall.function.name)..."
-                    try await handleToolCall(toolCall, config: config)
-                    statusMessage = "Thinking..."
+                // Buffer tool calls
+                if let toolCalls = chunk.choices.first?.delta.toolCalls {
+                    for toolCall in toolCalls {
+                        let index = toolCall.index ?? 0 // Index might be missing in some implementations, assume 0
+                        
+                        if accumulatedToolCalls[index] == nil {
+                            accumulatedToolCalls[index] = (id: "", name: "", args: "")
+                        }
+                        
+                        if !toolCall.id.isEmpty {
+                            accumulatedToolCalls[index]?.id = toolCall.id
+                        }
+                        
+                        if !toolCall.function.name.isEmpty {
+                            accumulatedToolCalls[index]?.name += toolCall.function.name
+                        }
+                        
+                        if !toolCall.function.arguments.isEmpty {
+                            accumulatedToolCalls[index]?.args += toolCall.function.arguments
+                        }
+                    }
                 }
                 
             } catch {
                 logger.warning("Failed to parse streaming chunk: \(error.localizedDescription)")
             }
         }
+        
+        // Process buffered tool calls
+        if !accumulatedToolCalls.isEmpty {
+            var nextMessages = messages
+            
+            // 1. Append Assistant Message with Tool Calls
+            var toolCallsList: [[String: Any]] = []
+            let sortedCalls = accumulatedToolCalls.sorted { $0.key < $1.key }
+            
+            for (_, call) in sortedCalls {
+                toolCallsList.append([
+                    "id": call.id,
+                    "type": "function",
+                    "function": [
+                        "name": call.name,
+                        "arguments": call.args
+                    ]
+                ])
+            }
+            
+            var assistantMsg: [String: Any] = [
+                "role": "assistant",
+                "tool_calls": toolCallsList
+            ]
+            if !accumulatedContent.isEmpty {
+                assistantMsg["content"] = accumulatedContent
+            }
+            nextMessages.append(assistantMsg)
+            
+            // 2. Execute Tools and Append Results
+            for (_, call) in sortedCalls {
+                statusMessage = "Calling tool: \(call.name)..."
+                
+                // Parse args
+                let argsData = call.args.data(using: .utf8) ?? Data()
+                let arguments = (try? JSONSerialization.jsonObject(with: argsData) as? [String: Any]) ?? [:]
+                
+                do {
+                    let result = try await MCPManager.shared.callTool(call.name, arguments: arguments)
+                    
+                    // JSON stringify the result for the message content
+                    let resultData = try JSONSerialization.data(withJSONObject: result)
+                    let resultString = String(data: resultData, encoding: .utf8) ?? "{}"
+                    
+                    nextMessages.append([
+                        "role": "tool",
+                        "tool_call_id": call.id,
+                        "content": resultString
+                    ])
+                    
+                } catch {
+                    nextMessages.append([
+                        "role": "tool",
+                        "tool_call_id": call.id,
+                        "content": "Error: \(error.localizedDescription)"
+                    ])
+                }
+            }
+            
+            // 3. Recurse
+            statusMessage = "Thinking..."
+            try await generateStreamingResponse(config: config, messages: nextMessages, tools: tools, chunkHandler: chunkHandler)
+        }
     }
     
-    private func generateNonStreamingResponse(config: LLMConfig, messages: [[String: String]], tools: [MCPTool]?) async throws -> String {
+    private func generateNonStreamingResponse(config: LLMConfig, messages: [[String: Any]], tools: [MCPTool]?) async throws -> String {
         let request = try buildRequest(config: config, messages: messages, tools: tools, stream: false)
         
         let (data, response) = try await session.data(for: request)
@@ -262,6 +336,7 @@ class LLMManager: ObservableObject {
         }
         
         guard httpResponse.statusCode == 200 else {
+            // ... (Error handling same as before)
             let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
             var errorMessage: String?
             if let errorStr = errorBody?["error"] as? String {
@@ -275,10 +350,63 @@ class LLMManager: ObservableObject {
         }
         
         let llmResponse = try JSONDecoder().decode(LLMResponse.self, from: data)
-        return llmResponse.choices.first?.message.content ?? ""
+        let message = llmResponse.choices.first?.message
+        
+        // Check for tool calls
+        if let toolCalls = message?.toolCalls, !toolCalls.isEmpty {
+            var nextMessages = messages
+            
+            // Reconstruct assistant message
+            var assistantMsg: [String: Any] = [
+                "role": "assistant",
+                "tool_calls": toolCalls.map { [
+                    "id": $0.id,
+                    "type": $0.type,
+                    "function": [
+                        "name": $0.function.name,
+                        "arguments": $0.function.arguments
+                    ]
+                ]}
+            ]
+            if let content = message?.content {
+                assistantMsg["content"] = content
+            }
+            nextMessages.append(assistantMsg)
+            
+            // Execute tools
+            for toolCall in toolCalls {
+                statusMessage = "Calling tool: \(toolCall.function.name)..."
+                let argsData = toolCall.function.arguments.data(using: .utf8) ?? Data()
+                let arguments = (try? JSONSerialization.jsonObject(with: argsData) as? [String: Any]) ?? [:]
+                
+                do {
+                    let result = try await MCPManager.shared.callTool(toolCall.function.name, arguments: arguments)
+                     let resultData = try JSONSerialization.data(withJSONObject: result)
+                    let resultString = String(data: resultData, encoding: .utf8) ?? "{}"
+                    
+                    nextMessages.append([
+                        "role": "tool",
+                        "tool_call_id": toolCall.id,
+                        "content": resultString
+                    ])
+                } catch {
+                     nextMessages.append([
+                        "role": "tool",
+                        "tool_call_id": toolCall.id,
+                        "content": "Error: \(error.localizedDescription)"
+                    ])
+                }
+            }
+            
+            // Recurse
+            statusMessage = "Thinking..."
+            return try await generateNonStreamingResponse(config: config, messages: nextMessages, tools: tools)
+        }
+        
+        return message?.content ?? ""
     }
     
-    private func buildRequest(config: LLMConfig, messages: [[String: String]], tools: [MCPTool]?, stream: Bool) throws -> URLRequest {
+    private func buildRequest(config: LLMConfig, messages: [[String: Any]], tools: [MCPTool]?, stream: Bool) throws -> URLRequest {
         var request = URLRequest(url: try buildEndpointURL(config: config))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -367,36 +495,6 @@ class LLMManager: ObservableObject {
             "properties": properties,
             "required": required
         ]
-    }
-    
-    private func handleToolCall(_ toolCall: StreamingChunk.ToolCall, config: LLMConfig) async throws {
-        // Parse tool arguments
-        let arguments: [String: Any] = try JSONSerialization.jsonObject(with: toolCall.function.arguments.data(using: .utf8)!) as? [String: Any] ?? [:]
-        
-        // Execute tool through MCP manager
-        do {
-            let result = try await MCPManager.shared.callTool(toolCall.function.name, arguments: arguments)
-            
-            // Continue conversation with tool result
-            let toolResultMessage: [String: String] = [
-                "role": "tool",
-                "tool_call_id": toolCall.id,
-                "content": "Tool result: \(result)"
-            ]
-            
-            // This would continue the conversation with the tool result
-            // Implementation depends on your conversation management strategy
-            
-        } catch {
-            logger.error("Tool call \(toolCall.function.name) failed: \(error.localizedDescription)")
-            throw error
-        }
-    }
-    
-    private func collectResponseData(response: HTTPURLResponse) async throws -> Data {
-        // This is a simplified implementation
-        // In practice, you'd read the response body based on the response object
-        return Data()
     }
     
     func getCurrentConfig() -> LLMConfig? {
