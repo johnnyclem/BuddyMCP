@@ -345,8 +345,8 @@ class LLMManager: ObservableObject {
                 return
             }
             
-            let response = try JSONDecoder().decode(RemoteModelsResponse.self, from: data)
-            let models = response.data.map { $0.id }.sorted()
+            let modelResponse = try JSONDecoder().decode(RemoteModelsResponse.self, from: data)
+            let models = modelResponse.data.map { $0.id }.sorted()
             remoteModels = models
             if remoteModel.isEmpty || !models.contains(remoteModel) {
                 remoteModel = models.first ?? ""
