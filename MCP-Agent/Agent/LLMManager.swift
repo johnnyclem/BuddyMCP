@@ -327,6 +327,7 @@ class LLMManager: ObservableObject {
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        DebugLogManager.shared.logNetworkRequest(context: "LLM models", request: request)
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -341,10 +342,12 @@ class LLMManager: ObservableObject {
                 if message == nil, let errorDict = errorBody["error"] as? [String: Any] {
                     message = errorDict["message"] as? String
                 }
+                DebugLogManager.shared.logNetworkResponse(context: "LLM models", response: httpResponse, data: data)
                 remoteModelsError = "HTTP \(httpResponse.statusCode): \(message ?? "Model list failed")"
                 return
             }
             
+            DebugLogManager.shared.logNetworkResponse(context: "LLM models", response: httpResponse, data: data)
             let modelResponse = try JSONDecoder().decode(RemoteModelsResponse.self, from: data)
             let models = modelResponse.data.map { $0.id }.sorted()
             remoteModels = models
@@ -352,6 +355,7 @@ class LLMManager: ObservableObject {
                 remoteModel = models.first ?? ""
             }
         } catch {
+            DebugLogManager.shared.logNetworkError(context: "LLM models", error: error)
             remoteModelsError = error.localizedDescription
         }
     }
@@ -425,19 +429,28 @@ class LLMManager: ObservableObject {
     
     private func generateStreamingResponse(config: LLMConfig, messages: [[String: Any]], tools: [MCPTool]?, chunkHandler: @escaping (String) -> Void) async throws {
         let request = try buildRequest(config: config, messages: messages, tools: tools, stream: true)
-        
-        let (bytes, response) = try await session.bytes(for: request)
+        DebugLogManager.shared.logNetworkRequest(context: "LLM chat (stream)", request: request)
+        let (bytes, response): (URLSession.AsyncBytes, URLResponse)
+        do {
+            (bytes, response) = try await session.bytes(for: request)
+        } catch {
+            DebugLogManager.shared.logNetworkError(context: "LLM chat (stream)", error: error)
+            throw error
+        }
         guard let httpResponse = response as? HTTPURLResponse else {
             throw LLMError.invalidResponse
         }
         
         guard httpResponse.statusCode == 200 else {
             // Try to read error body if possible (bytes stream doesn't allow easy reading of body without consuming)
+            DebugLogManager.shared.logNetworkResponse(context: "LLM chat (stream)", response: httpResponse)
              throw LLMError.httpError(statusCode: httpResponse.statusCode, message: "Stream failed")
         }
+        DebugLogManager.shared.logNetworkResponse(context: "LLM chat (stream)", response: httpResponse)
         
         var accumulatedContent = ""
         var accumulatedToolCalls: [Int: (id: String, name: String, args: String)] = [:]
+        var loggedChunks = 0
         
         for try await line in bytes.lines {
             guard line.hasPrefix("data: ") else { continue }
@@ -451,6 +464,11 @@ class LLMManager: ObservableObject {
             
             do {
                 let chunk = try JSONDecoder().decode(StreamingChunk.self, from: data)
+                if loggedChunks < 3 {
+                    let detail = DebugLogManager.shared.exportJSONIfPossible(data) ?? dataString
+                    DebugLogManager.shared.log(.info, category: "Network", message: "LLM stream chunk", details: detail)
+                    loggedChunks += 1
+                }
                 
                 if let content = chunk.choices.first?.delta.content {
                     accumulatedContent += content
@@ -547,12 +565,20 @@ class LLMManager: ObservableObject {
             statusMessage = "Thinking..."
             try await generateStreamingResponse(config: config, messages: nextMessages, tools: tools, chunkHandler: chunkHandler)
         }
+        
+        DebugLogManager.shared.log(.info, category: "Network", message: "LLM stream completed", details: "Content chars: \(accumulatedContent.count)\nTool calls: \(accumulatedToolCalls.count)")
     }
     
     private func generateNonStreamingResponse(config: LLMConfig, messages: [[String: Any]], tools: [MCPTool]?) async throws -> String {
         let request = try buildRequest(config: config, messages: messages, tools: tools, stream: false)
-        
-        let (data, response) = try await session.data(for: request)
+        DebugLogManager.shared.logNetworkRequest(context: "LLM chat", request: request)
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            DebugLogManager.shared.logNetworkError(context: "LLM chat", error: error)
+            throw error
+        }
         guard let httpResponse = response as? HTTPURLResponse else {
             throw LLMError.invalidResponse
         }
@@ -568,8 +594,10 @@ class LLMManager: ObservableObject {
             } else {
                 errorMessage = errorBody?["message"] as? String
             }
+            DebugLogManager.shared.logNetworkResponse(context: "LLM chat", response: httpResponse, data: data)
             throw LLMError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
         }
+        DebugLogManager.shared.logNetworkResponse(context: "LLM chat", response: httpResponse, data: data)
         
         let llmResponse = try JSONDecoder().decode(LLMResponse.self, from: data)
         let message = llmResponse.choices.first?.message

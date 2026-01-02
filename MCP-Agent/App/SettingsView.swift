@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var newServerCommand = "" // For Stdio
     @State private var newServerURL = "" // For SSE
     @State private var newServerTypeString = "stdio" // "stdio" or "sse"
+    @State private var newServerTintHex = ""
     @State private var selectedTab = 0
     
     var body: some View {
@@ -20,7 +21,9 @@ struct SettingsView: View {
                 Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
                 TabButton(title: "LLM", icon: "sparkles", isSelected: selectedTab == 2) { selectedTab = 2 }
                 Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
-                TabButton(title: "THEME", icon: "paintbrush", isSelected: selectedTab == 3) { selectedTab = 3 }
+                TabButton(title: "DEBUG", icon: "ladybug", isSelected: selectedTab == 3) { selectedTab = 3 }
+                Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
+                TabButton(title: "THEME", icon: "paintbrush", isSelected: selectedTab == 4) { selectedTab = 4 }
                 Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
                 Spacer()
             }
@@ -36,12 +39,15 @@ struct SettingsView: View {
                         newServerName: $newServerName,
                         newServerCommand: $newServerCommand,
                         newServerURL: $newServerURL,
-                        newServerTypeString: $newServerTypeString
+                        newServerTypeString: $newServerTypeString,
+                        newServerTintHex: $newServerTintHex
                     )
                 } else if selectedTab == 1 {
                     ToolListView()
                 } else if selectedTab == 2 {
                     LLMSettingsView()
+                } else if selectedTab == 3 {
+                    DebugSettingsView()
                 } else {
                     ThemeSettingsView()
                 }
@@ -97,6 +103,7 @@ struct ServerListView: View {
     @Binding var newServerCommand: String
     @Binding var newServerURL: String
     @Binding var newServerTypeString: String
+    @Binding var newServerTintHex: String
     
     var body: some View {
         VStack(spacing: 0) {
@@ -105,8 +112,14 @@ struct ServerListView: View {
                     ForEach(mcpManager.servers) { server in
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(server.name)
-                                    .font(Theme.headlineFont(size: 16))
+                                HStack(spacing: 8) {
+                                    Rectangle()
+                                        .fill(Color(hex: server.tintHex ?? "FFFFFF"))
+                                        .frame(width: 10, height: 10)
+                                        .overlay(Rectangle().stroke(Theme.borderColor, lineWidth: 1))
+                                    Text(server.name)
+                                        .font(Theme.headlineFont(size: 16))
+                                }
                                 
                                 HStack {
                                     Image(systemName: serverIcon(for: server.type))
@@ -154,6 +167,7 @@ struct ServerListView: View {
             HStack {
                 Spacer()
                 Button(action: {
+                    newServerTintHex = MCPManager.shared.nextAvailableTintHex()
                     showingAddServerSheet = true
                 }) {
                     Label("ADD SERVER", systemImage: "plus")
@@ -169,7 +183,8 @@ struct ServerListView: View {
                 name: $newServerName,
                 command: $newServerCommand,
                 url: $newServerURL,
-                typeString: $newServerTypeString
+                typeString: $newServerTypeString,
+                tintHex: $newServerTintHex
             )
         }
     }
@@ -197,6 +212,7 @@ struct AddServerView: View {
     @Binding var command: String
     @Binding var url: String
     @Binding var typeString: String
+    @Binding var tintHex: String
     
     var body: some View {
         VStack(spacing: 0) {
@@ -253,6 +269,12 @@ struct AddServerView: View {
                             .newsprintInput()
                     }
                 }
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("TINT COLOR")
+                        .font(Theme.uiFont(size: 10, weight: .bold))
+                    TintPalettePicker(selectedHex: $tintHex)
+                }
             }
             .padding(24)
             .background(Theme.background)
@@ -280,12 +302,18 @@ struct AddServerView: View {
         }
         .frame(width: 500, height: 400)
         .background(Theme.background)
+        .onAppear {
+            if tintHex.isEmpty {
+                tintHex = MCPManager.shared.nextAvailableTintHex()
+            }
+        }
     }
     
     var isAddDisabled: Bool {
         if name.isEmpty { return true }
         if typeString == "stdio" && command.isEmpty { return true }
         if typeString == "sse" && url.isEmpty { return true }
+        if tintHex.isEmpty { return true }
         return false
     }
     
@@ -307,13 +335,14 @@ struct AddServerView: View {
             }
         }
         
-        MCPManager.shared.addServer(name: name, type: type)
+        MCPManager.shared.addServer(name: name, type: type, tintHex: tintHex)
         isPresented = false
         
         // Reset fields
         name = ""
         command = ""
         url = ""
+        tintHex = MCPManager.shared.nextAvailableTintHex()
     }
 }
 
@@ -412,5 +441,36 @@ struct ThemeSettingsView: View {
         }
         .padding()
         .background(Theme.background)
+    }
+}
+
+struct TintPalettePicker: View {
+    @Binding var selectedHex: String
+    
+    private let columns = Array(repeating: GridItem(.fixed(24), spacing: 8), count: 6)
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            LazyVGrid(columns: columns, spacing: 8) {
+                ForEach(MCPManager.tintPalette, id: \.self) { hex in
+                    Button(action: {
+                        selectedHex = hex
+                    }) {
+                        Rectangle()
+                            .fill(Color(hex: hex))
+                            .frame(width: 24, height: 24)
+                            .overlay(
+                                Rectangle()
+                                    .stroke(Theme.borderColor, lineWidth: selectedHex == hex ? 2 : 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            
+            Text("Selected: #\(selectedHex)")
+                .font(Theme.monoFont(size: 10))
+                .foregroundColor(Theme.inkBlack.opacity(0.7))
+        }
     }
 }

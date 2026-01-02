@@ -28,6 +28,12 @@ class WatchdogService: ObservableObject {
     // MARK: - Service Management
     
     func installAndStartService() async throws {
+        guard isInstallSupported() else {
+            logger.info("Skipping watchdog install: not running from app bundle")
+            await checkServiceStatus()
+            return
+        }
+        
         logger.info("Installing and starting watchdog service")
         
         // Create the agent daemon bundle
@@ -46,6 +52,10 @@ class WatchdogService: ObservableObject {
         } else {
             throw WatchdogError.serviceRegistrationFailed
         }
+    }
+
+    private func isInstallSupported() -> Bool {
+        Bundle.main.bundleURL.pathExtension == "app"
     }
     
     func uninstallService() async throws {

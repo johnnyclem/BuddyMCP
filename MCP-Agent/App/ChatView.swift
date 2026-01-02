@@ -2,17 +2,10 @@ import SwiftUI
 
 struct ChatView: View {
     @State private var messageText = ""
-    @State private var messages: [ChatMessage] = [
-        ChatMessage(role: "agent", content: "Hello! I'm your BuddyMCP agent. How can I help you today?")
-    ]
+    @ObservedObject var chatHistory = ChatHistoryStore.shared
     @ObservedObject var llmManager = LLMManager.shared
     @ObservedObject var themeManager = ThemeManager.shared
-    
-    struct ChatMessage: Identifiable {
-        let id = UUID()
-        let role: String
-        var content: String
-    }
+    @ObservedObject var toolUsage = ToolUsageManager.shared
     
     var body: some View {
         VStack(spacing: 0) {
@@ -31,7 +24,7 @@ struct ChatView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        ForEach(messages) { msg in
+                        ForEach(chatHistory.messages) { msg in
                             HStack(alignment: .top) {
                                 if msg.role == "user" {
                                     Spacer()
@@ -63,14 +56,19 @@ struct ChatView: View {
                     }
                     .padding()
                 }
-                .background(Theme.background)
-                .onChange(of: messages.count) { _ in
-                    if let lastId = messages.last?.id {
+                .background(
+                    ToolTintBackground(
+                        tintHex: toolUsage.activeTintHex,
+                        isActive: toolUsage.isActive
+                    )
+                )
+                .onChange(of: chatHistory.messages.count) { _, _ in
+                    if let lastId = chatHistory.messages.last?.id {
                         proxy.scrollTo(lastId, anchor: .bottom)
                     }
                 }
-                .onChange(of: messages.last?.content) { _ in
-                    if let lastId = messages.last?.id {
+                .onChange(of: chatHistory.messages.last?.content) { _, _ in
+                    if let lastId = chatHistory.messages.last?.id {
                         proxy.scrollTo(lastId, anchor: .bottom)
                     }
                 }
@@ -124,7 +122,7 @@ struct ChatView: View {
         guard !messageText.isEmpty else { return }
         
         let userMsg = messageText
-        messages.append(ChatMessage(role: "user", content: userMsg))
+        chatHistory.messages.append(ChatMessage(role: "user", content: userMsg))
         messageText = ""
         
         // Prepare context
@@ -144,13 +142,13 @@ struct ChatView: View {
         ]
         
         // Add recent history (last 10 messages)
-        for msg in messages.suffix(10) {
+        for msg in chatHistory.messages.suffix(10) {
             messageHistory.append(["role": msg.role == "agent" ? "assistant" : "user", "content": msg.content])
         }
         
         // Add placeholder for agent response
-        messages.append(ChatMessage(role: "agent", content: ""))
-        let responseIndex = messages.count - 1
+        chatHistory.messages.append(ChatMessage(role: "agent", content: ""))
+        let responseIndex = chatHistory.messages.count - 1
         
         Task {
             do {
@@ -162,13 +160,36 @@ struct ChatView: View {
                 
                 for try await chunk in stream {
                     await MainActor.run {
-                        messages[responseIndex].content += chunk
+                        chatHistory.messages[responseIndex].content += chunk
                     }
                 }
             } catch {
                 await MainActor.run {
-                    messages[responseIndex].content += "\n[Error: \(error.localizedDescription)]"
+                    chatHistory.messages[responseIndex].content += "\n[Error: \(error.localizedDescription)]"
                 }
+            }
+        }
+    }
+}
+
+struct ToolTintBackground: View {
+    let tintHex: String?
+    let isActive: Bool
+    @State private var pulse = false
+    
+    var body: some View {
+        ZStack {
+            Theme.background
+            if isActive, let tintHex = tintHex {
+                Color(hex: tintHex)
+                    .opacity(pulse ? 0.18 : 0.08)
+                    .animation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true), value: pulse)
+                    .onAppear {
+                        pulse = true
+                    }
+                    .onDisappear {
+                        pulse = false
+                    }
             }
         }
     }

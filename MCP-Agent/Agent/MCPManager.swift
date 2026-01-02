@@ -31,6 +31,7 @@ class MCPServer: ObservableObject, Identifiable {
     let name: String
     let type: ServerType
     @Published var isEnabled: Bool = true
+    @Published var tintHex: String?
     
     enum ServerType: Equatable, Codable {
         case stdio(command: String, arguments: [String])
@@ -42,9 +43,10 @@ class MCPServer: ObservableObject, Identifiable {
     @Published var isConnected = false
     @Published var lastError: Error?
     
-    init(name: String, type: ServerType) {
+    init(name: String, type: ServerType, tintHex: String? = nil) {
         self.name = name
         self.type = type
+        self.tintHex = tintHex
     }
     
     func connect() async throws {
@@ -150,12 +152,18 @@ class MCPServer: ObservableObject, Identifiable {
         var request = URLRequest(url: url.appendingPathComponent("tools"))
         request.httpMethod = "GET"
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        await DebugLogManager.shared.logNetworkRequest(context: "MCP tools (SSE)", request: request)
         
         let (_, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
+            if let httpResponse = response as? HTTPURLResponse {
+                await DebugLogManager.shared.logNetworkResponse(context: "MCP tools (SSE)", response: httpResponse)
+            }
             throw MCPError.connectionFailed
         }
+        
+        await DebugLogManager.shared.logNetworkResponse(context: "MCP tools (SSE)", response: httpResponse)
         
         await MainActor.run {
             // Populate tools from response
@@ -427,6 +435,7 @@ struct PersistentServerConfig: Codable {
     let type: MCPServer.ServerType
     let isEnabled: Bool
     let disabledTools: [String]
+    let tintHex: String?
 }
 
 // MARK: - MCP Manager
@@ -442,6 +451,29 @@ class MCPManager: ObservableObject {
     private let logger = Logger(subsystem: "com.mcp.agent", category: "MCPManager")
     private let discoveryQueue = DispatchQueue(label: "mcp.discovery", qos: .userInitiated)
     private let defaultsKey = "MCPServersConfig"
+
+    static let tintPalette: [String] = [
+        "D6EBD1", // sage
+        "CDE4F2", // sky
+        "E1C6D7", // lavender
+        "F2D0A9", // apricot
+        "F3E6B3", // butter
+        "C9D8D2", // seafoam
+        "E8D7C3", // sand
+        "D0D1E8", // periwinkle
+        "F0C7C7", // rose
+        "BFD7EA"  // mist
+    ]
+    
+    private let categoryTintMap: [String: String] = [
+        "calendar": "D6EBD1",
+        "todo": "F3E6B3",
+        "memory": "CDE4F2",
+        "messages": "E1C6D7",
+        "crypto": "F2D0A9",
+        "web": "BFD7EA",
+        "escalation": "F0C7C7"
+    ]
     
     private init() {
         loadConfig()
@@ -463,6 +495,11 @@ class MCPManager: ObservableObject {
             for server in servers where server.isEnabled {
                 try? await server.connect()
                 applyToolStates(for: server)
+                assignTintIfNeeded(for: server)
+            }
+            
+            for server in servers {
+                assignTintIfNeeded(for: server)
             }
             
             aggregateTools()
@@ -542,6 +579,88 @@ class MCPManager: ObservableObject {
         
         aggregatedTools = toolMap.values.sorted { $0.name < $1.name }
     }
+
+    func nextAvailableTintHex() -> String {
+        let used = usedTintHexes()
+        if let available = Self.tintPalette.first(where: { !used.contains($0) }) {
+            return available
+        }
+        return Self.tintPalette.first ?? "D6EBD1"
+    }
+    
+    private func assignTintIfNeeded(for server: MCPServer) {
+        if let tint = server.tintHex, !tint.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return
+        }
+        let inferred = inferTintHex(for: server)
+        let used = usedTintHexes(excluding: server)
+        let chosen = chooseTintHex(preferred: inferred, used: used)
+        server.tintHex = chosen
+        saveConfig()
+    }
+    
+    private func usedTintHexes(excluding server: MCPServer? = nil) -> Set<String> {
+        let all = servers.compactMap { item -> String? in
+            if let server = server, item.id == server.id {
+                return nil
+            }
+            return item.tintHex?.uppercased()
+        }
+        return Set(all)
+    }
+    
+    private func chooseTintHex(preferred: String?, used: Set<String>) -> String {
+        if let preferred = preferred?.uppercased(), !preferred.isEmpty {
+            if !used.contains(preferred) {
+                return preferred
+            }
+        }
+        let available = Self.tintPalette.filter { !used.contains($0) }
+        if let randomAvailable = available.randomElement() {
+            return randomAvailable
+        }
+        return preferred?.uppercased() ?? (Self.tintPalette.first ?? "D6EBD1")
+    }
+    
+    private func inferTintHex(for server: MCPServer) -> String? {
+        var counts: [String: Int] = [:]
+        for tool in server.tools {
+            if let category = tool.category?.lowercased() {
+                counts[category, default: 0] += 1
+            } else if let inferred = inferCategory(from: tool.name) {
+                counts[inferred, default: 0] += 1
+            }
+        }
+        
+        if let topCategory = counts.max(by: { $0.value < $1.value })?.key {
+            return categoryTintMap[topCategory]
+        }
+        
+        if let inferred = inferCategory(from: server.name.lowercased()) {
+            return categoryTintMap[inferred]
+        }
+        
+        return nil
+    }
+    
+    private func inferCategory(from name: String) -> String? {
+        let lower = name.lowercased()
+        let prefixes = [
+            ("calendar", "calendar"),
+            ("todo", "todo"),
+            ("memory", "memory"),
+            ("messages", "messages"),
+            ("crypto", "crypto"),
+            ("web", "web"),
+            ("escalate", "escalation")
+        ]
+        for (prefix, category) in prefixes {
+            if lower.hasPrefix(prefix) || lower.contains(prefix) {
+                return category
+            }
+        }
+        return nil
+    }
     
     func callTool(_ toolName: String, arguments: [String: Any]) async throws -> [String: Any] {
         guard let tool = aggregatedTools.first(where: { $0.name == toolName }) else {
@@ -571,6 +690,11 @@ class MCPManager: ObservableObject {
             throw MCPError.serverNotFound("\(toolName) (Server Disabled)")
         }
         
+        ToolUsageManager.shared.start(serverName: server.name, toolName: toolName, tintHex: server.tintHex)
+        defer {
+            ToolUsageManager.shared.stop()
+        }
+
         let startTime = Date()
         do {
             let result = try await server.callTool(name: toolName, arguments: arguments)
@@ -590,6 +714,7 @@ class MCPManager: ObservableObject {
     func refreshServer(_ server: MCPServer) async {
         do {
             try await server.connect()
+            assignTintIfNeeded(for: server)
             aggregateTools()
             logger.info("Refreshed server \(server.name)")
         } catch {
@@ -599,14 +724,16 @@ class MCPManager: ObservableObject {
     
     // MARK: - Server Management
     
-    func addServer(name: String, type: MCPServer.ServerType) {
-        let server = MCPServer(name: name, type: type)
+    func addServer(name: String, type: MCPServer.ServerType, tintHex: String? = nil) {
+        let normalizedTint = tintHex?.uppercased()
+        let server = MCPServer(name: name, type: type, tintHex: normalizedTint)
         servers.append(server)
         saveConfig()
         
         Task {
             try? await server.connect()
             applyToolStates(for: server)
+            assignTintIfNeeded(for: server)
             aggregateTools()
         }
     }
@@ -623,6 +750,7 @@ class MCPManager: ObservableObject {
             Task {
                 try? await server.connect()
                 applyToolStates(for: server)
+                assignTintIfNeeded(for: server)
                 aggregateTools()
             }
         } else {
@@ -647,7 +775,8 @@ class MCPManager: ObservableObject {
                 name: server.name,
                 type: server.type,
                 isEnabled: server.isEnabled,
-                disabledTools: server.tools.filter { !$0.isEnabled }.map { $0.name }
+                disabledTools: server.tools.filter { !$0.isEnabled }.map { $0.name },
+                tintHex: server.tintHex
             )
         }
         
@@ -665,7 +794,7 @@ class MCPManager: ObservableObject {
         var loadedServers: [MCPServer] = []
         
         for config in configs {
-            let server = MCPServer(name: config.name, type: config.type)
+            let server = MCPServer(name: config.name, type: config.type, tintHex: config.tintHex?.uppercased())
             server.isEnabled = config.isEnabled
             loadedServers.append(server)
             server.lastError = nil
