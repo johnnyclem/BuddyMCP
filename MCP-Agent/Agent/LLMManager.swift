@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import OSLog
 
@@ -129,11 +130,67 @@ class LLMManager: ObservableObject {
     private let session = URLSession.shared
     private var currentConfig: LLMConfig?
     private var fallbackChain: [LLMConfig] = []
+    private var isLoadingSettings = false
+    
+    private enum DefaultsKeys {
+        static let useRemote = "llm_use_remote"
+        static let remoteBaseURL = "llm_remote_base_url"
+        static let remoteModel = "llm_remote_model"
+        static let veniceIncludeSystemPrompt = "llm_venice_include_system_prompt"
+        static let veniceWebSearchMode = "llm_venice_web_search_mode"
+    }
+    
+    private let localBaseURL = "http://localhost:11434/v1"
+    private let localAPIKey = "ollama"
+    private let localModel = "qwen3:8b"
     
     @Published var isProcessing = false
     @Published var currentProvider: String = ""
     @Published var lastError: Error?
     @Published var statusMessage: String = ""
+    
+    @Published var useRemote = false {
+        didSet {
+            guard !isLoadingSettings else { return }
+            persistSettings()
+            applyFallbackChain()
+        }
+    }
+    
+    @Published var remoteBaseURL = "" {
+        didSet {
+            guard !isLoadingSettings else { return }
+            persistSettings()
+            applyFallbackChain()
+        }
+    }
+    
+    @Published var remoteModel = "" {
+        didSet {
+            guard !isLoadingSettings else { return }
+            persistSettings()
+            applyFallbackChain()
+        }
+    }
+    
+    @Published var remoteModels: [String] = []
+    @Published var isRefreshingModels = false
+    @Published var remoteModelsError: String = ""
+    @Published var remoteKeyStored = false
+    
+    @Published var veniceIncludeSystemPrompt = true {
+        didSet {
+            guard !isLoadingSettings else { return }
+            persistSettings()
+        }
+    }
+    
+    @Published var veniceWebSearchMode = "auto" {
+        didSet {
+            guard !isLoadingSettings else { return }
+            persistSettings()
+        }
+    }
     
     private init() {
         Task {
@@ -142,10 +199,175 @@ class LLMManager: ObservableObject {
     }
     
     private func setupFallbackChain() async {
-        // Default: Local Ollama only for now to avoid confusing 401 errors from unconfigured cloud providers
-        fallbackChain = [
-            LLMConfig(provider: .ollamaLocal, baseURL: "http://localhost:11434/v1", apiKey: "ollama", model: "qwen3:8b")
-        ]
+        bootstrapRemoteDefaultsIfNeeded()
+        loadSettings()
+        applyFallbackChain()
+    }
+
+    private func bootstrapRemoteDefaultsIfNeeded() {
+        let env = EnvLoader.loadMergedEnvironment()
+        if UserDefaults.standard.string(forKey: DefaultsKeys.remoteBaseURL) == nil {
+            if let baseURL = env["VENICE_BASE_URL"] ?? env["OPENAI_BASE_URL"] {
+                UserDefaults.standard.set(baseURL, forKey: DefaultsKeys.remoteBaseURL)
+            }
+        }
+        
+        if KeychainManager.shared.retrieveOpenAICompatibleKey() == nil {
+            if let apiKey = env["VENICE_API_KEY"] ?? env["OPENAI_API_KEY"] {
+                _ = KeychainManager.shared.storeOpenAICompatibleKey(apiKey)
+            }
+        }
+    }
+
+    private func loadSettings() {
+        isLoadingSettings = true
+        defer { isLoadingSettings = false }
+        
+        useRemote = UserDefaults.standard.bool(forKey: DefaultsKeys.useRemote)
+        remoteBaseURL = UserDefaults.standard.string(forKey: DefaultsKeys.remoteBaseURL) ?? ""
+        remoteModel = UserDefaults.standard.string(forKey: DefaultsKeys.remoteModel) ?? ""
+        if UserDefaults.standard.object(forKey: DefaultsKeys.veniceIncludeSystemPrompt) == nil {
+            UserDefaults.standard.set(true, forKey: DefaultsKeys.veniceIncludeSystemPrompt)
+        }
+        veniceIncludeSystemPrompt = UserDefaults.standard.bool(forKey: DefaultsKeys.veniceIncludeSystemPrompt)
+        
+        if UserDefaults.standard.string(forKey: DefaultsKeys.veniceWebSearchMode) == nil {
+            UserDefaults.standard.set("auto", forKey: DefaultsKeys.veniceWebSearchMode)
+        }
+        veniceWebSearchMode = UserDefaults.standard.string(forKey: DefaultsKeys.veniceWebSearchMode) ?? "auto"
+        refreshRemoteKeyStatus()
+    }
+    
+    private func persistSettings() {
+        UserDefaults.standard.set(useRemote, forKey: DefaultsKeys.useRemote)
+        UserDefaults.standard.set(remoteBaseURL, forKey: DefaultsKeys.remoteBaseURL)
+        UserDefaults.standard.set(remoteModel, forKey: DefaultsKeys.remoteModel)
+        UserDefaults.standard.set(veniceIncludeSystemPrompt, forKey: DefaultsKeys.veniceIncludeSystemPrompt)
+        UserDefaults.standard.set(veniceWebSearchMode, forKey: DefaultsKeys.veniceWebSearchMode)
+    }
+    
+    private func applyFallbackChain() {
+        var configs: [LLMConfig] = []
+        if let remoteConfig = buildRemoteConfig() {
+            configs.append(remoteConfig)
+        }
+        configs.append(buildLocalConfig())
+        fallbackChain = configs
+    }
+    
+    private func buildLocalConfig() -> LLMConfig {
+        LLMConfig(
+            provider: .ollamaLocal,
+            baseURL: localBaseURL,
+            apiKey: localAPIKey,
+            model: localModel
+        )
+    }
+    
+    private func buildRemoteConfig() -> LLMConfig? {
+        guard useRemote else { return nil }
+        let baseURL = remoteBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        let model = remoteModel.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !baseURL.isEmpty, !model.isEmpty else { return nil }
+        guard let apiKey = KeychainManager.shared.retrieveOpenAICompatibleKey() else { return nil }
+        
+        return LLMConfig(
+            provider: .openAICompatible,
+            baseURL: baseURL,
+            apiKey: apiKey,
+            model: model
+        )
+    }
+
+    func refreshRemoteKeyStatus() {
+        remoteKeyStored = KeychainManager.shared.retrieveOpenAICompatibleKey() != nil
+    }
+    
+    func storeRemoteAPIKey(_ key: String) {
+        guard !key.isEmpty else { return }
+        _ = KeychainManager.shared.storeOpenAICompatibleKey(key)
+        refreshRemoteKeyStatus()
+        applyFallbackChain()
+    }
+    
+    func clearRemoteAPIKey() {
+        _ = KeychainManager.shared.deleteOpenAICompatibleKey()
+        refreshRemoteKeyStatus()
+        applyFallbackChain()
+    }
+
+    struct RemoteModelsResponse: Codable {
+        let data: [RemoteModel]
+        
+        struct RemoteModel: Codable {
+            let id: String
+        }
+    }
+    
+    func refreshRemoteModels() async {
+        remoteModelsError = ""
+        isRefreshingModels = true
+        defer { isRefreshingModels = false }
+        
+        let baseURL = remoteBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !baseURL.isEmpty else {
+            remoteModelsError = "Enter a base URL to fetch models."
+            return
+        }
+        guard let apiKey = KeychainManager.shared.retrieveOpenAICompatibleKey() else {
+            remoteModelsError = "Add an API key to fetch models."
+            return
+        }
+        guard let url = buildModelsURL(baseURL: baseURL) else {
+            remoteModelsError = "Invalid base URL."
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                remoteModelsError = "Invalid response from model list."
+                return
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                let errorBody = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+                var message = errorBody["message"] as? String ?? errorBody["error"] as? String
+                if message == nil, let errorDict = errorBody["error"] as? [String: Any] {
+                    message = errorDict["message"] as? String
+                }
+                remoteModelsError = "HTTP \(httpResponse.statusCode): \(message ?? "Model list failed")"
+                return
+            }
+            
+            let response = try JSONDecoder().decode(RemoteModelsResponse.self, from: data)
+            let models = response.data.map { $0.id }.sorted()
+            remoteModels = models
+            if remoteModel.isEmpty || !models.contains(remoteModel) {
+                remoteModel = models.first ?? ""
+            }
+        } catch {
+            remoteModelsError = error.localizedDescription
+        }
+    }
+
+    var remoteSettingsIssue: String? {
+        guard useRemote else { return nil }
+        if remoteBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Remote base URL is required."
+        }
+        if !remoteKeyStored {
+            return "API key is required for remote inference."
+        }
+        if remoteModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Select a remote model."
+        }
+        return nil
     }
     
     func setFallbackChain(_ configs: [LLMConfig]) {
@@ -448,20 +670,52 @@ class LLMManager: ObservableObject {
                 ]
             }
         }
+
+        if config.provider == .openAICompatible, isVeniceBaseURL(config.baseURL) {
+            var veniceParameters: [String: Any] = [
+                "include_venice_system_prompt": veniceIncludeSystemPrompt
+            ]
+            let webSearchMode = veniceWebSearchMode.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !webSearchMode.isEmpty {
+                veniceParameters["enable_web_search"] = webSearchMode
+            }
+            requestBody["venice_parameters"] = veniceParameters
+        }
         
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
         return request
     }
     
     private func buildEndpointURL(config: LLMConfig) throws -> URL {
+        let baseString: String
         switch config.provider {
         case .ollamaLocal:
-            return URL(string: "\(config.baseURL ?? "http://localhost:11434/v1")/chat/completions")!
+            baseString = config.baseURL ?? localBaseURL
         case .ollamaCloud:
-            return URL(string: "\(config.baseURL ?? "https://ollama.cloud/api")/chat/completions")!
+            baseString = config.baseURL ?? "https://ollama.cloud/api"
         case .openAICompatible:
-            return URL(string: "\(config.baseURL ?? "https://api.openai.com/v1")/chat/completions")!
+            baseString = config.baseURL ?? "https://api.openai.com/v1"
         }
+        
+        guard let baseURL = URL(string: baseString) else {
+            throw LLMError.invalidURL
+        }
+        return baseURL.appendingPathComponent("chat/completions")
+    }
+
+    private func buildModelsURL(baseURL: String) -> URL? {
+        guard let url = URL(string: baseURL) else { return nil }
+        return url.appendingPathComponent("models")
+    }
+
+    private func isVeniceBaseURL(_ baseURL: String?) -> Bool {
+        guard let baseURL = baseURL, let url = URL(string: baseURL) else { return false }
+        guard let host = url.host?.lowercased() else { return false }
+        return host.contains("venice.ai")
+    }
+    
+    var isUsingVeniceRemote: Bool {
+        isVeniceBaseURL(remoteBaseURL)
     }
     
     private func buildToolSchema(for tool: MCPTool) -> [String: Any] {

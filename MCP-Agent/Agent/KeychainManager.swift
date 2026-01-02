@@ -90,6 +90,18 @@ class KeychainManager: ObservableObject {
     func retrieveOpenAIKey() -> String? {
         return retrieveAPIKey(for: "com.mcp.agent.openai", account: "api_key")
     }
+
+    func storeOpenAICompatibleKey(_ key: String) -> Bool {
+        return storeAPIKey(key, for: "com.mcp.agent.openai_compatible", account: "api_key")
+    }
+
+    func retrieveOpenAICompatibleKey() -> String? {
+        return retrieveAPIKey(for: "com.mcp.agent.openai_compatible", account: "api_key")
+    }
+
+    func deleteOpenAICompatibleKey() -> Bool {
+        return deleteAPIKey(for: "com.mcp.agent.openai_compatible", account: "api_key")
+    }
     
     func storeTwilioCredentials(sid: String, token: String) -> Bool {
         let credentials = ["sid": sid, "token": token]

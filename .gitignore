@@ -6,3 +6,5 @@
 .codex/
 */agent_core.log
 .env
+.build/
+*/.build/

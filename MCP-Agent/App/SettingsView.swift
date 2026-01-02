@@ -18,7 +18,9 @@ struct SettingsView: View {
                 Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
                 TabButton(title: "TOOLS", icon: "hammer", isSelected: selectedTab == 1) { selectedTab = 1 }
                 Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
-                TabButton(title: "THEME", icon: "paintbrush", isSelected: selectedTab == 2) { selectedTab = 2 }
+                TabButton(title: "LLM", icon: "sparkles", isSelected: selectedTab == 2) { selectedTab = 2 }
+                Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
+                TabButton(title: "THEME", icon: "paintbrush", isSelected: selectedTab == 3) { selectedTab = 3 }
                 Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
                 Spacer()
             }
@@ -38,6 +40,8 @@ struct SettingsView: View {
                     )
                 } else if selectedTab == 1 {
                     ToolListView()
+                } else if selectedTab == 2 {
+                    LLMSettingsView()
                 } else {
                     ThemeSettingsView()
                 }
