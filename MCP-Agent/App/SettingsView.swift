@@ -15,16 +15,16 @@ struct SettingsView: View {
             // Custom Tab Bar
             HStack(spacing: 0) {
                 TabButton(title: "SERVERS", icon: "server.rack", isSelected: selectedTab == 0) { selectedTab = 0 }
-                Rectangle().frame(width: 1).foregroundColor(Theme.inkBlack)
+                Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
                 TabButton(title: "TOOLS", icon: "hammer", isSelected: selectedTab == 1) { selectedTab = 1 }
-                Rectangle().frame(width: 1).foregroundColor(Theme.inkBlack)
+                Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
                 TabButton(title: "THEME", icon: "paintbrush", isSelected: selectedTab == 2) { selectedTab = 2 }
-                Rectangle().frame(width: 1).foregroundColor(Theme.inkBlack)
+                Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
                 Spacer()
             }
             .frame(height: 44)
             .background(Theme.background)
-            .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack), alignment: .bottom)
+            .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.borderColor), alignment: .bottom)
             
             // Content
             Group {
@@ -45,7 +45,7 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.background)
             
-            Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack)
+            Rectangle().frame(height: 1).foregroundColor(Theme.borderColor)
             
             HStack {
                 Spacer()
@@ -79,8 +79,8 @@ struct TabButton: View {
             }
             .padding(.horizontal, 24)
             .frame(maxHeight: .infinity)
-            .background(isSelected ? Theme.inkBlack : Theme.background)
-            .foregroundColor(isSelected ? Theme.background : Theme.inkBlack)
+            .background(isSelected ? Theme.borderColor : Theme.background) // Use BorderColor for Active Tab BG
+            .foregroundColor(isSelected ? Theme.background : Theme.borderColor) // Use BorderColor for Inactive Text
         }
         .buttonStyle(.plain)
     }
@@ -145,7 +145,7 @@ struct ServerListView: View {
                 .padding()
             }
             
-            Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack)
+            Rectangle().frame(height: 1).foregroundColor(Theme.borderColor)
             
             HStack {
                 Spacer()
@@ -204,7 +204,7 @@ struct AddServerView: View {
             }
             .padding()
             .background(Theme.background)
-            .border(width: 1, edges: [.bottom], color: Theme.inkBlack)
+            .border(width: 1, edges: [.bottom], color: Theme.borderColor)
             
             VStack(alignment: .leading, spacing: 20) {
                 // Name Field
@@ -226,7 +226,7 @@ struct AddServerView: View {
                     .pickerStyle(.segmented)
                 }
                 
-                Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack.opacity(0.2))
+                Rectangle().frame(height: 1).foregroundColor(Theme.borderColor.opacity(0.2))
                 
                 // Dynamic Fields
                 if typeString == "stdio" {
@@ -272,7 +272,7 @@ struct AddServerView: View {
             }
             .padding()
             .background(Theme.background)
-            .border(width: 1, edges: [.top], color: Theme.inkBlack)
+            .border(width: 1, edges: [.top], color: Theme.borderColor)
         }
         .frame(width: 500, height: 400)
         .background(Theme.background)
@@ -325,7 +325,7 @@ struct ToolListView: View {
                             .font(Theme.uiFont(size: 12, weight: .bold))
                             .tracking(2)
                             .padding(.bottom, 4)
-                            .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack), alignment: .bottom)
+                            .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.borderColor), alignment: .bottom)
                         
                         if server.tools.isEmpty {
                             Text("No tools found")
@@ -377,7 +377,7 @@ struct ThemeSettingsView: View {
                 .font(Theme.uiFont(size: 12, weight: .bold))
                 .tracking(2)
                 .padding(.bottom, 8)
-                .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack), alignment: .bottom)
+                .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.borderColor), alignment: .bottom)
             
             ForEach(ThemeType.allCases) { theme in
                 Button(action: {
@@ -391,14 +391,14 @@ struct ThemeSettingsView: View {
                         if themeManager.currentTheme == theme {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(Theme.inkBlack)
+                                .foregroundColor(Theme.borderColor) // Checkmark matches border/accent
                         }
                     }
                     .padding()
                     .newsprintCard()
                     .overlay(
                         Rectangle()
-                            .stroke(Theme.inkBlack, lineWidth: themeManager.currentTheme == theme ? 4 : 1)
+                            .stroke(Theme.borderColor, lineWidth: themeManager.currentTheme == theme ? 4 : 1)
                     )
                 }
                 .buttonStyle(.plain)

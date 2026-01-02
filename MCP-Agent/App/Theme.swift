@@ -5,6 +5,7 @@ import SwiftUI
 enum ThemeType: String, CaseIterable, Identifiable {
     case newsprint
     case minimalist
+    case artDeco
     
     var id: String { rawValue }
     
@@ -12,6 +13,7 @@ enum ThemeType: String, CaseIterable, Identifiable {
         switch self {
         case .newsprint: return "Newsprint"
         case .minimalist: return "Minimalist Mono"
+        case .artDeco: return "Art Deco"
         }
     }
 }
@@ -34,8 +36,17 @@ struct Theme {
     // MARK: - Colors
     static var background: Color {
         switch manager.currentTheme {
-        case .newsprint: return Color(hex: "F9F9F7")
+        case .newsprint: return Color(hex: "F2F0E9")
         case .minimalist: return Color(hex: "FFFFFF")
+        case .artDeco: return Color(hex: "0A0A0A")
+        }
+    }
+    
+    static var cardBackground: Color {
+        switch manager.currentTheme {
+        case .newsprint: return Color(hex: "F2F0E9")
+        case .minimalist: return Color(hex: "FFFFFF")
+        case .artDeco: return Color(hex: "141414")
         }
     }
     
@@ -43,6 +54,15 @@ struct Theme {
         switch manager.currentTheme {
         case .newsprint: return Color(hex: "111111")
         case .minimalist: return Color(hex: "000000")
+        case .artDeco: return Color(hex: "F2F0E4") // Champagne Cream
+        }
+    }
+    
+    static var borderColor: Color {
+        switch manager.currentTheme {
+        case .newsprint: return Color(hex: "111111")
+        case .minimalist: return Color(hex: "000000")
+        case .artDeco: return Color(hex: "D4AF37") // Gold
         }
     }
     
@@ -50,30 +70,54 @@ struct Theme {
         switch manager.currentTheme {
         case .newsprint: return Color(hex: "E5E5E0")
         case .minimalist: return Color(hex: "E5E5E5")
+        case .artDeco: return Color(hex: "D4AF37").opacity(0.3)
         }
     }
     
     static var editorialRed: Color {
         switch manager.currentTheme {
         case .newsprint: return Color(hex: "CC0000")
-        case .minimalist: return Color(hex: "000000") // Black is the accent
+        case .minimalist: return Color(hex: "000000")
+        case .artDeco: return Color(hex: "D4AF37") // Gold Accent
         }
     }
     
     static var hoverGrey: Color {
         switch manager.currentTheme {
         case .newsprint: return Color(hex: "F5F5F5")
-        case .minimalist: return Color(hex: "F5F5F5")
+        case .minimalist: return Color(hex: "FAFAFA")
+        case .artDeco: return Color(hex: "1E3D59") // Midnight Blue
+        }
+    }
+    
+    // MARK: - Layout
+    static var borderWidth: CGFloat {
+        switch manager.currentTheme {
+        case .newsprint: return 1.0
+        case .minimalist: return 2.0
+        case .artDeco: return 1.0
         }
     }
     
     // MARK: - Typography
     static func headlineFont(size: CGFloat) -> Font {
-        .system(size: size, weight: .bold, design: .serif)
+        switch manager.currentTheme {
+        case .newsprint:
+            return .system(size: size, weight: .black, design: .serif)
+        case .minimalist:
+            return .system(size: size, weight: .bold, design: .serif)
+        case .artDeco:
+            return .system(size: size, weight: .regular, design: .serif) // Elegant Serif
+        }
     }
     
     static func bodyFont(size: CGFloat) -> Font {
-        .system(size: size, weight: .regular, design: .serif)
+        switch manager.currentTheme {
+        case .artDeco:
+            return .system(size: size, weight: .regular, design: .default) // Geometric Sans
+        default:
+            return .system(size: size, weight: .regular, design: .serif)
+        }
     }
     
     static func uiFont(size: CGFloat, weight: Font.Weight = .regular) -> Font {
@@ -81,11 +125,9 @@ struct Theme {
         case .newsprint:
             return .system(size: size, weight: weight, design: .default)
         case .minimalist:
-            // Minimalist uses Serif for almost everything, but Mono/Sans for UI is okay.
-            // Doc says "Display/Headlines: Playfair", "Body: Source Serif 4", "Mono/Labels: JetBrains Mono"
-            // So mostly Serif. But for small UI elements, System is safer or Serif if we want to be strict.
-            // Let's stick to System for UI legibility in this iteration.
-            return .system(size: size, weight: weight, design: .default)
+            return .system(size: size, weight: weight, design: .monospaced)
+        case .artDeco:
+            return .system(size: size, weight: weight, design: .default) // Geometric Sans
         }
     }
     
@@ -128,8 +170,8 @@ extension Color {
 struct NewsprintCardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .background(Theme.background)
-            .border(Theme.inkBlack, width: 1)
+            .background(Theme.cardBackground)
+            .border(Theme.borderColor, width: Theme.borderWidth)
     }
 }
 
@@ -140,7 +182,8 @@ struct NewsprintInputModifier: ViewModifier {
             .padding(8)
             .font(Theme.monoFont(size: 14))
             .background(Color.clear)
-            .overlay(Rectangle().frame(height: 2).padding(.top, 30).foregroundColor(Theme.inkBlack), alignment: .bottom)
+            .overlay(Rectangle().frame(height: Theme.borderWidth).padding(.top, 30).foregroundColor(Theme.borderColor), alignment: .bottom)
+            .foregroundColor(Theme.inkBlack) // Ensure text color is correct
     }
 }
 
@@ -152,9 +195,9 @@ struct NewsprintButtonModifier: ViewModifier {
             .font(Theme.uiFont(size: 14, weight: .bold))
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
-            .background(isPrimary ? Theme.inkBlack : Color.clear)
-            .foregroundColor(isPrimary ? Theme.background : Theme.inkBlack)
-            .overlay(Rectangle().stroke(Theme.inkBlack, lineWidth: 1))
+            .background(isPrimary ? Theme.borderColor : Color.clear) // Use Border color for Primary BG
+            .foregroundColor(isPrimary ? Theme.background : Theme.borderColor) // Contrast text
+            .overlay(Rectangle().stroke(Theme.borderColor, lineWidth: Theme.borderWidth))
     }
 }
 

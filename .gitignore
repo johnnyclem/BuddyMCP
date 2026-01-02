@@ -5,3 +5,4 @@
 .claude/
 .codex/
 */agent_core.log
+.env

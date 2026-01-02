@@ -23,7 +23,7 @@ let package = Package(
                 "BuddyMCP.app",     // Exclude built app bundle
                 "package_app.sh",   // Exclude packaging script
                 "agent_core.log",   // Exclude runtime logs
-                "draft_002_ss_001.png" // Exclude design assets
+                "AI_DOCS"           // Exclude AI documentation
             ],
             sources: ["App", "Agent"]
         ),

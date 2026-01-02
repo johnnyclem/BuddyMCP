@@ -40,16 +40,41 @@ end tell
     }
     
     func readMessages(from senderQuery: String, limit: Int = 5) async throws -> [String: Any] {
+        // Sanitize query to prevent basic script injection/breakage
+        let safeQuery = senderQuery.replacingOccurrences(of: "\"", with: "")
+        
         let script = """
 tell application "Messages"
+    -- Helper to escape JSON special characters
+    script JSONHelper
+        on findAndReplace(findString, replaceString, baseString)
+            set AppleScript's text item delimiters to findString
+            set the textItems to text items of baseString
+            set AppleScript's text item delimiters to replaceString
+            set the resultString to the textItems as string
+            set AppleScript's text item delimiters to ""
+            return resultString
+        end findAndReplace
+
+        on escape(textToEscape)
+            if textToEscape is missing value then return ""
+            set res to textToEscape as string
+            set res to my findAndReplace("\\\\", "\\\\\\\\", res)
+            set res to my findAndReplace("\\"", "\\\\\\"", res)
+            set res to my findAndReplace(character id 10, "\\\\n", res)
+            set res to my findAndReplace(character id 13, "\\\\n", res)
+            return res
+        end escape
+    end script
+
     try
-        set targetChat to first chat whose name contains \"\(senderQuery)\" 
+        set targetChat to first chat whose name contains \"\(safeQuery)\" 
         
         -- Get last N messages
         set msgList to {}
         set recentMessages to (messages of targetChat)
         
-        -- AppleScript lists are 1-based. We want the last 'limit' items.
+        -- AppleScript lists are 1-based.
         set msgCount to count of recentMessages
         if msgCount is 0 then return "[]"
         
@@ -71,8 +96,10 @@ tell application "Messages"
             
             if msgContent is missing value then set msgContent to "[Attachment/Empty]"
             
-            -- Simple JSON construction in AppleScript is painful, passing raw string
-            set end of resultList to "{" & "\"sender\": \"" & msgSender & "\", \"content\": \"" & msgContent & "\"}"
+            set escapedSender to JSONHelper's escape(msgSender)
+            set escapedContent to JSONHelper's escape(msgContent)
+            
+            set end of resultList to "{" & "\\\"sender\\\": \\\"" & escapedSender & "\\\", \\\"content\\\": \\\"" & escapedContent & "\\\"}"
         end repeat
         
         -- Join with commas
@@ -85,7 +112,7 @@ tell application "Messages"
         
         return jsonString
     on error
-        return "Error: Could not find chat with '\(senderQuery)'"
+        return "Error: Could not find chat with '\(safeQuery)'"
     end try
 end tell
 """
@@ -96,14 +123,11 @@ end tell
             return ["success": false, "message": jsonString]
         }
         
-        // Parse the crude JSON string returned by AppleScript
-        // We clean up escaped quotes if necessary, though the script tries to be safe
         if let data = jsonString.data(using: .utf8),
            let messages = try? JSONSerialization.jsonObject(with: data) as? [[String: String]] {
             return ["success": true, "messages": messages, "count": messages.count]
         }
         
-        // Fallback if JSON parsing fails (AppleScript JSON generation is fragile)
         return ["success": false, "raw_output": jsonString, "message": "Failed to parse messages"]
     }
     

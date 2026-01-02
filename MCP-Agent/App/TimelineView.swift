@@ -22,11 +22,11 @@ struct TimelineView: View {
                     }
                     .buttonStyle(.plain)
                     .padding(8)
-                    .border(Theme.inkBlack, width: 1)
+                    .border(Theme.borderColor, width: 1)
                 }
                 .padding()
                 .background(Theme.background)
-                .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack), alignment: .bottom)
+                .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.borderColor), alignment: .bottom)
                 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
@@ -56,7 +56,7 @@ struct TimelineView: View {
             .frame(minWidth: 400)
             .background(Theme.background)
             
-            Rectangle().frame(width: 1).foregroundColor(Theme.inkBlack)
+            Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
             
             // Sidebar / Chat Placeholder
             ChatView()
@@ -110,7 +110,7 @@ struct ApprovalSection: View {
                     }
                 }
                 .padding()
-                .background(Theme.background)
+                .background(Theme.cardBackground)
                 .overlay(Rectangle().stroke(Theme.editorialRed, lineWidth: 1))
             }
         }
@@ -130,7 +130,7 @@ struct TaskSection: View {
                     .tracking(2)
                     .foregroundColor(Theme.inkBlack.opacity(0.6))
                     .padding(.bottom, 4)
-                    .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack.opacity(0.3)), alignment: .bottom)
+                    .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.borderColor.opacity(0.3)), alignment: .bottom)
                 
                 ForEach(tasks) { task in
                     TaskRow(task: task)
@@ -208,7 +208,7 @@ struct AddTaskView: View {
             }
             .padding()
             .background(Theme.background)
-            .border(width: 1, edges: [.bottom], color: Theme.inkBlack)
+            .border(width: 1, edges: [.bottom], color: Theme.borderColor)
             
             VStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -253,7 +253,7 @@ struct AddTaskView: View {
             }
             .padding()
             .background(Theme.background)
-            .border(width: 1, edges: [.top], color: Theme.inkBlack)
+            .border(width: 1, edges: [.top], color: Theme.borderColor)
         }
         .frame(width: 400, height: 350)
         .background(Theme.background)

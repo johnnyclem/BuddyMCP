@@ -34,7 +34,7 @@ struct ContentView: View {
             }
             .padding()
             .background(Theme.background)
-            .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.inkBlack), alignment: .bottom)
+            .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.borderColor), alignment: .bottom)
             
             // Main Content
             TimelineView()
@@ -60,8 +60,8 @@ struct StatusIndicator: View {
     var body: some View {
         HStack(spacing: 4) {
             Rectangle()
-                .fill(isActive ? Theme.inkBlack : Color.clear)
-                .stroke(Theme.inkBlack, lineWidth: 1)
+                .fill(isActive ? Theme.borderColor : Color.clear)
+                .stroke(Theme.borderColor, lineWidth: 1)
                 .frame(width: 8, height: 8)
             Text(label.uppercased())
                 .font(Theme.uiFont(size: 10, weight: .bold))
