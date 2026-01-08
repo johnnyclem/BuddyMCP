@@ -351,7 +351,7 @@ class WatchdogService: ObservableObject {
             _ = try await MCPManager.shared.callTool("escalate_to_user", arguments: [
                 "reason": "Agent watchdog failure",
                 "message": "The MCP Agent has failed and the watchdog was unable to restart it automatically. Please check the system logs and restart the application manually."
-            ])
+            ], agentName: "Watchdog Service")
         } catch {
             logger.error("Failed to send escalation: \(error.localizedDescription)")
         }
