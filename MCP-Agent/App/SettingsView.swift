@@ -352,10 +352,12 @@ struct AddServerView: View {
 
 struct ToolListView: View {
     @ObservedObject var mcpManager = MCPManager.shared
+    @State private var showingUsageLog = false
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                AgentUsageSummaryView(showingUsageLog: $showingUsageLog)
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "hand.tap")
                         .foregroundColor(Theme.borderColor)
@@ -410,7 +412,211 @@ struct ToolListView: View {
             }
             .padding()
         }
+        .sheet(isPresented: $showingUsageLog) {
+            ToolUsageLogView()
+        }
         .background(Theme.background)
+    }
+}
+
+struct AgentUsageSummaryView: View {
+    @ObservedObject var usageManager = ToolUsageManager.shared
+    @Binding var showingUsageLog: Bool
+    
+    private let toolColumns = [GridItem(.adaptive(minimum: 150), spacing: 8)]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("AGENT TOOL USAGE")
+                    .font(Theme.uiFont(size: 12, weight: .bold))
+                    .tracking(2)
+                Spacer()
+                Button {
+                    showingUsageLog = true
+                } label: {
+                    Label("OPEN LOG", systemImage: "clock.arrow.circlepath")
+                        .labelStyle(.titleAndIcon)
+                }
+                .newsprintButton(isPrimary: false)
+            }
+            
+            if usageManager.isActive {
+                HStack(spacing: 10) {
+                    Rectangle()
+                        .fill(Color(hex: usageManager.activeTintHex ?? MCPManager.tintPalette.first ?? "D6EBD1"))
+                        .frame(width: 10, height: 10)
+                        .overlay(Rectangle().stroke(Theme.borderColor, lineWidth: 1))
+                    Text("\(usageManager.activeAgentName.isEmpty ? "Agent" : usageManager.activeAgentName) is using \(usageManager.activeToolName) on \(usageManager.activeServerName)")
+                        .font(Theme.bodyFont(size: 12))
+                }
+                .padding(10)
+                .newsprintCard()
+            }
+            
+            if usageManager.agentSummaries.isEmpty {
+                Text("No agent tool activity yet.")
+                    .font(Theme.bodyFont(size: 13))
+                    .foregroundColor(Theme.inkBlack.opacity(0.7))
+            } else {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(usageManager.agentSummaries) { summary in
+                        AgentSummaryRow(summary: summary, columns: toolColumns)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .newsprintCard()
+    }
+}
+
+struct AgentSummaryRow: View {
+    let summary: AgentUsageSummary
+    let columns: [GridItem]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(summary.agentName)
+                    .font(Theme.headlineFont(size: 15))
+                Spacer()
+                if let lastUsed = summary.lastUsedAt {
+                    Text("Last used \(relativeDate(lastUsed))")
+                        .font(Theme.monoFont(size: 10))
+                        .foregroundColor(Theme.inkBlack.opacity(0.7))
+                }
+            }
+            
+            if summary.tools.isEmpty {
+                Text("No tools recorded for this agent yet.")
+                    .font(Theme.bodyFont(size: 12))
+                    .foregroundColor(Theme.inkBlack.opacity(0.7))
+            } else {
+                LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+                    ForEach(summary.tools, id: \.self) { tool in
+                        Text(tool)
+                            .font(Theme.monoFont(size: 12))
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .background(Theme.background)
+                            .overlay(Rectangle().stroke(Theme.borderColor, lineWidth: 1))
+                    }
+                }
+            }
+        }
+        .padding(12)
+        .newsprintCard()
+    }
+    
+    private func relativeDate(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+struct ToolUsageLogView: View {
+    @Environment(\.dismiss) var dismiss
+    @ObservedObject var usageManager = ToolUsageManager.shared
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("AGENT TOOL USAGE LOG")
+                    .font(Theme.headlineFont(size: 16))
+                Spacer()
+                Button("CLOSE") {
+                    dismiss()
+                }
+                .newsprintButton(isPrimary: false)
+            }
+            .padding()
+            .background(Theme.background)
+            .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.borderColor), alignment: .bottom)
+            
+            if usageManager.logEntries.isEmpty {
+                VStack {
+                    Spacer()
+                    Text("No tool usage has been recorded yet.")
+                        .font(Theme.bodyFont(size: 14))
+                        .foregroundColor(Theme.inkBlack.opacity(0.7))
+                    Spacer()
+                }
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(Array(usageManager.logEntries.reversed())) { entry in
+                            ToolUsageLogRow(entry: entry)
+                        }
+                    }
+                    .padding()
+                }
+            }
+        }
+        .frame(minWidth: 560, minHeight: 440)
+        .background(Theme.background)
+    }
+}
+
+struct ToolUsageLogRow: View {
+    let entry: ToolUsageLogEntry
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                statusBadge(entry)
+                Text(entry.toolName)
+                    .font(Theme.monoFont(size: 13))
+                Spacer()
+                Text(entry.durationDescription.uppercased())
+                    .font(Theme.monoFont(size: 10))
+                    .foregroundColor(Theme.inkBlack.opacity(0.7))
+            }
+            
+            Text("Agent: \(entry.agentName)")
+                .font(Theme.bodyFont(size: 12))
+            Text("Server: \(entry.serverName)")
+                .font(Theme.bodyFont(size: 12))
+            
+            HStack(spacing: 8) {
+                Text(timestamp(entry.startedAt))
+                    .font(Theme.monoFont(size: 10))
+                    .foregroundColor(Theme.inkBlack.opacity(0.7))
+                if let endedAt = entry.completedAt {
+                    Text("→ \(timestamp(endedAt))")
+                        .font(Theme.monoFont(size: 10))
+                        .foregroundColor(Theme.inkBlack.opacity(0.7))
+                }
+            }
+        }
+        .padding(12)
+        .newsprintCard()
+    }
+    
+    private func statusBadge(_ entry: ToolUsageLogEntry) -> some View {
+        let color: Color
+        if let succeeded = entry.succeeded {
+            color = succeeded ? Theme.borderColor : Theme.editorialRed
+        } else {
+            color = Theme.inkBlack
+        }
+        return HStack(spacing: 6) {
+            Rectangle()
+                .fill(Color(hex: entry.tintHex ?? MCPManager.tintPalette.first ?? "D6EBD1"))
+                .frame(width: 10, height: 10)
+                .overlay(Rectangle().stroke(Theme.borderColor, lineWidth: 1))
+            Text(entry.statusLabel)
+                .font(Theme.monoFont(size: 10))
+                .foregroundColor(color)
+        }
+    }
+    
+    private func timestamp(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .medium
+        return formatter.string(from: date)
     }
 }
 

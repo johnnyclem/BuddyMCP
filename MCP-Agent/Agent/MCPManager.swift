@@ -671,7 +671,7 @@ class MCPManager: ObservableObject {
         return nil
     }
     
-    func callTool(_ toolName: String, arguments: [String: Any]) async throws -> [String: Any] {
+    func callTool(_ toolName: String, arguments: [String: Any], agentName: String = "BuddyMCP") async throws -> [String: Any] {
         guard let tool = aggregatedTools.first(where: { $0.name == toolName }) else {
             throw MCPError.unknownTool(toolName)
         }
@@ -699,14 +699,16 @@ class MCPManager: ObservableObject {
             throw MCPError.serverNotFound("\(toolName) (Server Disabled)")
         }
         
-        ToolUsageManager.shared.start(serverName: server.name, toolName: toolName, tintHex: server.tintHex)
+        var succeeded = false
+        ToolUsageManager.shared.start(agentName: agentName, serverName: server.name, toolName: toolName, tintHex: server.tintHex)
         defer {
-            ToolUsageManager.shared.stop()
+            ToolUsageManager.shared.stop(succeeded: succeeded)
         }
 
         let startTime = Date()
         do {
             let result = try await server.callTool(name: toolName, arguments: arguments)
+            succeeded = true
             let duration = Date().timeIntervalSince(startTime)
             logger.info("Tool \(toolName) completed in \(String(format: "%.2f", duration))s")
             return result

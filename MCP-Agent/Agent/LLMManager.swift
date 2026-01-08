@@ -540,7 +540,7 @@ class LLMManager: ObservableObject {
                 let arguments = (try? JSONSerialization.jsonObject(with: argsData) as? [String: Any]) ?? [:]
                 
                 do {
-                    let result = try await MCPManager.shared.callTool(call.name, arguments: arguments)
+                    let result = try await MCPManager.shared.callTool(call.name, arguments: arguments, agentName: agentLabel(for: config))
                     
                     // JSON stringify the result for the message content
                     let resultData = try JSONSerialization.data(withJSONObject: result)
@@ -630,7 +630,7 @@ class LLMManager: ObservableObject {
                 let arguments = (try? JSONSerialization.jsonObject(with: argsData) as? [String: Any]) ?? [:]
                 
                 do {
-                    let result = try await MCPManager.shared.callTool(toolCall.function.name, arguments: arguments)
+                    let result = try await MCPManager.shared.callTool(toolCall.function.name, arguments: arguments, agentName: agentLabel(for: config))
                      let resultData = try JSONSerialization.data(withJSONObject: result)
                     let resultString = String(data: resultData, encoding: .utf8) ?? "{}"
                     
@@ -654,6 +654,19 @@ class LLMManager: ObservableObject {
         }
         
         return message?.content ?? ""
+    }
+    
+    private func agentLabel(for config: LLMConfig) -> String {
+        let providerName: String
+        switch config.provider {
+        case .ollamaLocal:
+            providerName = "LLM · Local"
+        case .ollamaCloud:
+            providerName = "LLM · Cloud"
+        case .openAICompatible:
+            providerName = "LLM · Remote"
+        }
+        return "\(providerName) (\(config.model))"
     }
     
     private func buildRequest(config: LLMConfig, messages: [[String: Any]], tools: [MCPTool]?, stream: Bool) throws -> URLRequest {

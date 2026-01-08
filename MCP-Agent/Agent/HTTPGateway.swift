@@ -135,9 +135,12 @@ class HTTPGateway: ObservableObject {
             return
         }
         
+        let agentName = (json["agent"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let caller = (agentName?.isEmpty == false ? agentName : nil) ?? "HTTP Gateway"
+        
         Task {
             do {
-                let result = try await MCPManager.shared.callTool(toolName, arguments: arguments)
+                let result = try await MCPManager.shared.callTool(toolName, arguments: arguments, agentName: caller)
                 let responseData = try JSONSerialization.data(withJSONObject: ["success": true, "result": result])
                 self.sendJSONResponse(connection, statusCode: 200, data: responseData)
             } catch {
