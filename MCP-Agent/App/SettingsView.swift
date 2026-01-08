@@ -15,15 +15,17 @@ struct SettingsView: View {
         VStack(spacing: 0) {
             // Custom Tab Bar
             HStack(spacing: 0) {
-                TabButton(title: "SERVERS", icon: "server.rack", isSelected: selectedTab == 0) { selectedTab = 0 }
+                TabButton(title: "DISCOVER", icon: "bag", isSelected: selectedTab == 0) { selectedTab = 0 }
                 Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
-                TabButton(title: "TOOLS", icon: "hammer", isSelected: selectedTab == 1) { selectedTab = 1 }
+                TabButton(title: "SERVERS", icon: "server.rack", isSelected: selectedTab == 1) { selectedTab = 1 }
                 Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
-                TabButton(title: "LLM", icon: "sparkles", isSelected: selectedTab == 2) { selectedTab = 2 }
+                TabButton(title: "TOOLS", icon: "hammer", isSelected: selectedTab == 2) { selectedTab = 2 }
                 Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
-                TabButton(title: "DEBUG", icon: "ladybug", isSelected: selectedTab == 3) { selectedTab = 3 }
+                TabButton(title: "LLM", icon: "sparkles", isSelected: selectedTab == 3) { selectedTab = 3 }
                 Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
-                TabButton(title: "THEME", icon: "paintbrush", isSelected: selectedTab == 4) { selectedTab = 4 }
+                TabButton(title: "DEBUG", icon: "ladybug", isSelected: selectedTab == 4) { selectedTab = 4 }
+                Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
+                TabButton(title: "THEME", icon: "paintbrush", isSelected: selectedTab == 5) { selectedTab = 5 }
                 Rectangle().frame(width: 1).foregroundColor(Theme.borderColor)
                 Spacer()
             }
@@ -34,6 +36,8 @@ struct SettingsView: View {
             // Content
             Group {
                 if selectedTab == 0 {
+                    ToolDiscoveryView()
+                } else if selectedTab == 1 {
                     ServerListView(
                         showingAddServerSheet: $showingAddServerSheet,
                         newServerName: $newServerName,
@@ -42,11 +46,11 @@ struct SettingsView: View {
                         newServerTypeString: $newServerTypeString,
                         newServerTintHex: $newServerTintHex
                     )
-                } else if selectedTab == 1 {
-                    ToolListView()
                 } else if selectedTab == 2 {
-                    LLMSettingsView()
+                    ToolListView()
                 } else if selectedTab == 3 {
+                    LLMSettingsView()
+                } else if selectedTab == 4 {
                     DebugSettingsView()
                 } else {
                     ThemeSettingsView()
@@ -352,6 +356,15 @@ struct ToolListView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "hand.tap")
+                        .foregroundColor(Theme.borderColor)
+                    Text("Toggle tools on when you are ready. New installs keep every tool OFF until you flip the switch the first time.")
+                        .font(Theme.bodyFont(size: 12))
+                        .foregroundColor(Theme.inkBlack.opacity(0.7))
+                }
+                .padding(.horizontal, 4)
+                
                 ForEach(mcpManager.servers) { server in
                     VStack(alignment: .leading, spacing: 12) {
                         Text(server.name.uppercased())

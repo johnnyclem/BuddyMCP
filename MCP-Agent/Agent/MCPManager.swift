@@ -11,7 +11,7 @@ struct MCPTool: Codable, Identifiable {
     let category: String?
     let requiresConfirmation: Bool
     let estimatedDuration: TimeInterval?
-    var isEnabled: Bool = true
+    var isEnabled: Bool = false
     
     enum CodingKeys: String, CodingKey {
         case name, description, inputSchema, category, requiresConfirmation, estimatedDuration, isEnabled
@@ -435,7 +435,9 @@ struct PersistentServerConfig: Codable {
     let type: MCPServer.ServerType
     let isEnabled: Bool
     let disabledTools: [String]
+    let enabledTools: [String]?
     let tintHex: String?
+    let defaultToolsDisabled: Bool?
 }
 
 // MARK: - MCP Manager
@@ -643,6 +645,13 @@ class MCPManager: ObservableObject {
         return nil
     }
     
+    func inferTintHex(forName name: String) -> String? {
+        if let inferredCategory = inferCategory(from: name) {
+            return categoryTintMap[inferredCategory]
+        }
+        return nil
+    }
+    
     private func inferCategory(from name: String) -> String? {
         let lower = name.lowercased()
         let prefixes = [
@@ -776,7 +785,9 @@ class MCPManager: ObservableObject {
                 type: server.type,
                 isEnabled: server.isEnabled,
                 disabledTools: server.tools.filter { !$0.isEnabled }.map { $0.name },
-                tintHex: server.tintHex
+                enabledTools: server.tools.filter { $0.isEnabled }.map { $0.name },
+                tintHex: server.tintHex,
+                defaultToolsDisabled: true
             )
         }
         
@@ -811,9 +822,20 @@ class MCPManager: ObservableObject {
             return
         }
         
+        let disabled = Set(config.disabledTools)
+        let enabled = Set(config.enabledTools ?? [])
+        let defaultToolsDisabled = config.defaultToolsDisabled ?? false
+        
         for i in 0..<server.tools.count {
-            if config.disabledTools.contains(server.tools[i].name) {
+            let toolName = server.tools[i].name
+            if disabled.contains(toolName) {
                 server.tools[i].isEnabled = false
+            } else if !enabled.isEmpty {
+                server.tools[i].isEnabled = enabled.contains(toolName)
+            } else if defaultToolsDisabled {
+                server.tools[i].isEnabled = false
+            } else {
+                server.tools[i].isEnabled = true
             }
         }
     }
